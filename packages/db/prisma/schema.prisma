@@ -1,0 +1,151 @@
+// Ranking Elite Beach — schema Prisma
+// Sprint 1 (Fundação): apenas tenancy + identidade/acesso.
+// Entidades de domínio (Player, Season, Championship, Round, ...) entram nas próximas sprints,
+// conforme docs/DATABASE.md. Schema já nasce multi-tenant-ready (club_id).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Papéis de acesso (RBAC). Espelha RoleSchema em @reb/contracts.
+enum Role {
+  ADMIN
+  ORGANIZER
+  PLAYER
+  VIEWER
+}
+
+/// Nível técnico do jogador. Espelha SkillLevelSchema em @reb/contracts.
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  PRO
+}
+
+/// Situação do jogador (soft delete via INACTIVE).
+enum PlayerStatus {
+  ACTIVE
+  INACTIVE
+}
+
+/// Situação da temporada.
+enum SeasonStatus {
+  OPEN
+  CLOSED
+}
+
+/// Ciclo de vida do campeonato. Config estrutural congela ao sair de DRAFT (BR-05).
+enum ChampionshipStatus {
+  DRAFT
+  ACTIVE
+  FINISHED
+}
+
+/// Raiz de tenancy. No MVP existe um único clube semeado.
+model Club {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  users   User[]
+  players Player[]
+  seasons Season[]
+
+  @@map("club")
+}
+
+/// Usuário do sistema (login). Pode estar vinculado a um jogador (playerId) no futuro.
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  clubId       String   @map("club_id") @db.Uuid
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         Role     @default(VIEWER)
+  playerId     String?  @map("player_id") @db.Uuid
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@index([clubId])
+  @@map("app_user")
+}
+
+/// Jogador do clube. Idade é derivada de birthDate (não armazenada) — BR-01.
+model Player {
+  id         String       @id @default(uuid()) @db.Uuid
+  clubId     String       @map("club_id") @db.Uuid
+  name       String
+  photoUrl   String?      @map("photo_url")
+  birthDate  DateTime     @map("birth_date") @db.Date
+  phone      String?
+  skillLevel SkillLevel   @default(INTERMEDIATE) @map("skill_level")
+  status     PlayerStatus @default(ACTIVE)
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@index([clubId, status])
+  @@index([clubId, name])
+  @@map("player")
+}
+
+/// Temporada (ex.: 2026). Agrupa campeonatos e preserva histórico.
+model Season {
+  id        String       @id @default(uuid()) @db.Uuid
+  clubId    String       @map("club_id") @db.Uuid
+  year      Int
+  name      String
+  status    SeasonStatus @default(OPEN)
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  club          Club           @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  championships Championship[]
+
+  @@unique([clubId, year])
+  @@index([clubId])
+  @@map("season")
+}
+
+/// Campeonato dentro de uma temporada.
+model Championship {
+  id             String             @id @default(uuid()) @db.Uuid
+  seasonId       String             @map("season_id") @db.Uuid
+  name           String
+  roundsCount    Int                @map("rounds_count")
+  qualifiersCount Int               @map("qualifiers_count")
+  status         ChampionshipStatus @default(DRAFT)
+  startDate      DateTime?          @map("start_date") @db.Date
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  season Season              @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  config ChampionshipConfig?
+
+  @@index([seasonId])
+  @@map("championship")
+}
+
+/// Configuração parametrizável do campeonato (1:1). Valores nunca ficam fixos no código.
+model ChampionshipConfig {
+  championshipId       String  @id @map("championship_id") @db.Uuid
+  scoringTable         Json    @map("scoring_table")
+  tiebreakers          Json
+  drawWeights          Json    @map("draw_weights")
+  randomness           Int     @default(50)
+  allowRepeatPartners  Boolean @default(false) @map("allow_repeat_partners")
+  allowRepeatOpponents Boolean @default(true) @map("allow_repeat_opponents")
+  finalConfig          Json    @map("final_config")
+
+  championship Championship @relation(fields: [championshipId], references: [id], onDelete: Cascade)
+
+  @@map("championship_config")
+}

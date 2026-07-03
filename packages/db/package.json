@@ -1,0 +1,36 @@
+{
+  "name": "@reb/db",
+  "version": "0.2.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "prisma": "dotenv -e ../../.env -- prisma",
+    "seed": "dotenv -e ../../.env -- tsx prisma/seed.ts",
+    "lint": "echo \"noop\" && exit 0",
+    "typecheck": "tsc --noEmit",
+    "build": "dotenv -e ../../.env -- prisma generate && tsc -p tsconfig.json",
+    "test": "echo \"no tests yet\" && exit 0"
+  },
+  "prisma": {
+    "seed": "dotenv -e ../../.env -- tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.15",
+    "argon2": "^0.40.3",
+    "dotenv-cli": "^7.4.2",
+    "prisma": "^5.18.0",
+    "tsx": "^4.16.5",
+    "typescript": "^5.5.4"
+  }
+}

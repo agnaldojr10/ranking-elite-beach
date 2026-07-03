@@ -1,0 +1,25 @@
+{
+  "name": "ranking-elite-beach",
+  "version": "0.2.0",
+  "private": true,
+  "packageManager": "pnpm@9.7.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "db:generate": "pnpm --filter @reb/db prisma generate",
+    "db:migrate": "pnpm --filter @reb/db prisma migrate dev",
+    "db:seed": "pnpm --filter @reb/db seed",
+    "db:studio": "pnpm --filter @reb/db prisma studio"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "turbo": "^2.0.9",
+    "typescript": "^5.5.4"
+  }
+}

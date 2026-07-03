@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: reb-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: reb
+      POSTGRES_PASSWORD: reb
+      POSTGRES_DB: reb
+    ports:
+      - "5432:5432"
+    volumes:
+      - reb-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reb -d reb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  reb-pgdata:
