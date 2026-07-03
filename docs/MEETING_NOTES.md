@@ -4,6 +4,20 @@
 
 ---
 
+## 2026-07-03 — Sprint 3 aprovada + migração para VS Code
+
+**Resumo:** QA da Sprint 3 concluído e **aprovado** pelo PO (temporadas, campeonatos e config funcionando). Projeto versionado no GitHub (repo privado `agnaldojr10/ranking-elite-beach`). PO segue o desenvolvimento no VS Code.
+
+**Ajuste técnico:** criados scripts `pnpm dev:api` e `pnpm dev:web` (reconstroem `@reb/contracts` antes de subir) para evitar o erro de exports desatualizados ao rodar serviços isoladamente.
+
+**Aprovado:** Sprint 3.
+
+**Próxima tarefa:** Sprint 4 — Rodadas e Inscrições (lista de inscritos, presença, validação par/8–64, lista de espera). Base direta para o motor de sorteio (Sprint 5).
+
+**Como rodar (lembrete):** Terminal 1 `pnpm db:migrate` + `pnpm dev:api`; Terminal 2 `pnpm dev:web`. Banco: Neon. Login: admin@ranking-elite-beach.local / admin123.
+
+---
+
 ## 2026-07-03 — Sprint 3: Temporadas e Campeonatos entregue
 
 **Resumo:** Sprint 2 aprovada (cadastro de jogadores funcionando). Implementadas Temporadas e Campeonatos com configuração parametrizável.

@@ -4,6 +4,11 @@
 
 ---
 
+## [0.4.1] — 2026-07-03 — DX: scripts de dev e Sprint 3 aprovada
+**Descrição:** Sprint 3 validada e aprovada no QA do PO. Ajuste de developer experience.
+**Adicionado:** scripts raiz `dev:api` e `dev:web` (reconstroem `@reb/contracts` antes de subir, evitando erros de exports desatualizados ao rodar serviços isoladamente) e `packages:build`.
+**Aprovado:** Sprint 3 (Temporadas e Campeonatos).
+
 ## [0.4.0] — 2026-07-03 — Sprint 3: Temporadas e Campeonatos (para QA)
 **Descrição:** Temporadas e campeonatos com configuração parametrizável (pontuação, desempate, pesos do sorteio, final).
 **Adicionado:**

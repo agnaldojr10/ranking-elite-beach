@@ -12,8 +12,8 @@
 | 0 | Planejamento (este pacote) | ✔ Concluído e aprovado | — |
 | 1 | Fundação (monorepo, auth, RBAC, CI) | ✔ Concluído e aprovado | Fase 0 |
 | 2 | Jogadores (CRUD + perfil) | ✔ Concluído e aprovado | Fase 1 |
-| 3 | Temporadas e Campeonatos (+ config) | ▶ Em andamento (QA) | Fase 2 |
-| 4 | Rodadas e Inscrições | ⏳ | Fase 3 |
+| 3 | Temporadas e Campeonatos (+ config) | ✔ Concluído e aprovado | Fase 2 |
+| 4 | Rodadas e Inscrições | ⏳ Próxima | Fase 3 |
 | 5 | **Motor de Sorteio** (simulação + score + explicação) | ⏳ | Fase 4 |
 | 6 | Grupos, Jogos e Resultados | ⏳ | Fase 5 |
 | 7 | Classificação, Pontuação e Ranking | ⏳ | Fase 6 |
