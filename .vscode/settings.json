@@ -1,0 +1,4 @@
+{
+    "prisma.pinToPrisma6": true,
+    "vitest.nodeExecutable": "C:\\Program Files\\nodejs\\node.exe"
+}

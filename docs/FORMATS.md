@@ -79,6 +79,8 @@ flowchart TD
 3. **G≥3:** vencedores de grupo + melhores 2ºs até fechar a chave de potência de 2 (regra geral).
 4. **Placar padrão de W.O. por lesão:** **6/0** (BR-27).
 
+> **Implementado (Sprint 6 fatia B):** seleção de classificados, chaveamento e colocação final 1..D estão no `packages/contracts/src/knockout.ts` (`selectQualifiers`, `firstRoundPairings`, `computeRoundPlacement`, `pointsForPlacement`) e no `KnockoutService` (geração progressiva por fase). **Disputa de 3º lugar** habilitada quando há semifinal (chave ≥ 4); posições 5+ saem por desempenho na fase de grupos. Pontos por colocação via `scoring_table` (BR-30).
+
 **Observação:** grupos de 3 geram 2 jogos por dupla. Se quiser mais jogos, basta configurar a preferência de grupo = 4 na rodada.
 **Ponto ainda aberto:** campos muito grandes (G=9/10 → chave de 16) classificam muitos 2ºs — reavaliar na prática quando houver rodadas desse porte.
 

@@ -1,0 +1,16 @@
+{
+  "name": "Ranking Elite Beach",
+  "short_name": "Elite Beach",
+  "description": "Gestão de campeonatos de Beach Tennis",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4e9d8",
+  "theme_color": "#0e7490",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

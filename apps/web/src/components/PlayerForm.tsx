@@ -9,6 +9,7 @@ import {
   SkillLevelSchema,
 } from '@reb/contracts';
 import type { FormState } from '@/app/players/actions';
+import { buttonClass } from '@/components/ui/Button';
 
 type Defaults = {
   name?: string;
@@ -22,11 +23,7 @@ type Defaults = {
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="rounded-md bg-ocean px-4 py-2 font-medium text-white transition hover:opacity-90 disabled:opacity-60"
-    >
+    <button type="submit" disabled={pending} className={buttonClass('primary', 'md')}>
       {pending ? 'Salvando…' : label}
     </button>
   );
@@ -43,7 +40,8 @@ export function PlayerForm({
 }) {
   const [state, formAction] = useFormState(action, {} as FormState);
 
-  const field = 'rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-ocean';
+  const field =
+    'h-11 rounded-2xl border border-line bg-surface-2 px-3 text-ink outline-none focus:border-ocean';
 
   return (
     <form action={formAction} className="flex max-w-lg flex-col gap-4">
@@ -104,14 +102,14 @@ export function PlayerForm({
       </div>
 
       {state?.error && (
-        <p role="alert" className="rounded-md bg-red-100 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="rounded-2xl bg-danger/10 px-3 py-2 text-sm text-danger">
           {state.error}
         </p>
       )}
 
       <div className="flex items-center gap-3">
         <SubmitButton label={submitLabel} />
-        <Link href="/players" className="text-sm text-slate-500 hover:underline">
+        <Link href="/players" className="text-sm text-ink-2 hover:underline">
           Cancelar
         </Link>
       </div>

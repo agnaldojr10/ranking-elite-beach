@@ -47,15 +47,15 @@
 - **RF-26** Atualizar ranking do jogador (pontos, posição, rodadas, V/D, aproveitamento, evolução).
 
 ### Estatísticas e Dashboards
-- **RF-27** Estatísticas por jogador: maior sequência de vitórias/derrotas, parceiro favorito, melhor parceiro, adversário mais enfrentado, taxa de vitória, média de pontos, melhor/pior colocação, participações, finais, títulos.
-- **RF-28** Dashboard: ranking, próxima rodada, últimos resultados, jogadores ativos, indicadores e evolução.
+- **RF-27** ✅ Estatísticas por jogador: maior sequência de vitórias/derrotas, parceiro favorito (por frequência), adversário mais enfrentado, taxa de vitória, média de pontos, melhor/pior colocação, participações, finais, títulos. *(Sprint 8; "melhor parceiro" por taxa de vitória adiado — BR-36/BACKLOG.)*
+- **RF-28** ✅ Dashboard: KPIs (jogadores ativos, temporadas, campeonatos, rodadas), próxima rodada, últimos resultados, top do ranking (gráfico) e evolução por rodada na tela de ranking. *(Sprint 8)*
 
 ### Quadras e Agenda
-- **RF-29** Cadastrar quadras (nome, número, local, disponibilidade) e vincular jogos a quadras.
-- **RF-30** Agenda/calendário com rodadas, finais, eventos e treinos.
+- **RF-29** ✅ Cadastrar quadras (nome, número, local, disponibilidade) e vincular jogos a quadras. *(Fase 9)*
+- **RF-30** ✅ Agenda/calendário com rodadas, finais, eventos e treinos. *(Fase 9 — rodadas/finais derivadas + eventos/treinos manuais)*
 
 ### Fase Final
-- **RF-31** Classificar N duplas/jogadores para a final conforme configuração e gerar o chaveamento.
+- **RF-31** ✅ Classificar N duplas/jogadores para a final conforme configuração e gerar o chaveamento. *(Fase 10)*
 
 ### Administração / Notificações
 - **RF-32** Gestão de usuários e papéis (Admin, Organizador, Jogador, Visitante).

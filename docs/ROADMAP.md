@@ -13,14 +13,14 @@
 | 1 | Fundação (monorepo, auth, RBAC, CI) | ✔ Concluído e aprovado | Fase 0 |
 | 2 | Jogadores (CRUD + perfil) | ✔ Concluído e aprovado | Fase 1 |
 | 3 | Temporadas e Campeonatos (+ config) | ✔ Concluído e aprovado | Fase 2 |
-| 4 | Rodadas e Inscrições | ⏳ Próxima | Fase 3 |
-| 5 | **Motor de Sorteio** (simulação + score + explicação) | ⏳ | Fase 4 |
-| 6 | Grupos, Jogos e Resultados | ⏳ | Fase 5 |
-| 7 | Classificação, Pontuação e Ranking | ⏳ | Fase 6 |
-| 8 | Estatísticas e Dashboard | ⏳ | Fase 7 |
-| 9 | Quadras e Agenda | ⏳ | Fase 6 |
-| 10 | Fase Final (chaveamento) | ⏳ | Fase 7 |
-| 11 | Polimento, PWA, hardening, deploy | ⏳ | Fases 1–10 |
+| 4 | Rodadas e Inscrições | ✔ Concluído e aprovado | Fase 3 |
+| 5 | **Motor de Sorteio** (simulação + score + explicação) | ✔ Concluído e aprovado | Fase 4 |
+| 6 | Grupos, Jogos e Resultados | ✔ Concluído e aprovado | Fase 5 |
+| 7 | Classificação, Pontuação e Ranking | ✔ Concluído e aprovado | Fase 6 |
+| 8 | Estatísticas e Dashboard | ✔ Concluído e aprovado | Fase 7 |
+| 9 | Quadras e Agenda | ✔ Concluído e aprovado | Fase 6 |
+| 10 | Fase Final (chaveamento) | ✔ Concluído e aprovado | Fase 7 |
+| 11 | Polimento, PWA, hardening, deploy | ▶ Em andamento — PWA ✔; redesign UI ✔; hardening da API ✔ aprovado; **deploy** (Docker + guia + CI) p/ QA → encerra a fase | Fases 1–10 |
 
 ## Ordem recomendada de implementação
 Fundação → dados de base (jogadores/campeonatos/rodadas) → **sorteio** → jogos/resultados → ranking/stats → periféricos (quadras/agenda/final) → polimento. O sorteio vem cedo (Fase 5) por ser o maior risco/diferencial, mas depende de ter jogadores e rodadas para operar.

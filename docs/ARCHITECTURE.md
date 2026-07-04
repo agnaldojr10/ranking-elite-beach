@@ -101,11 +101,23 @@ sequenceDiagram
 
 - JWT access (curto) + refresh; Argon2 no hash de senha.
 - RBAC por papel; guards por rota; ownership checks.
-- Validação de entrada (zod nos contracts, class-validator na API).
+- Validação de entrada (zod nos contracts + `ZodValidationPipe` na API).
 - Auditoria de alterações de resultado e de configs sensíveis.
+- **Hardening (Fase 11):** Helmet (cabeçalhos), rate-limit por IP (global + estrito no login/refresh), CORS restrito ao `WEB_ORIGIN`, filtro global que padroniza os erros e não vaza stack. Detalhes em [API.md §1.1](./API.md).
 
 ## 8. Escalabilidade e performance
 
 - Índices em chaves de consulta quente (ver [DATABASE.md](./DATABASE.md)).
 - Ranking/estatísticas materializados/atualizados por evento (evitar recomputar tudo a cada leitura).
 - Sort-engine com orçamento de tempo (time-boxed) e complexidade controlada.
+
+## 9. Topologia de deploy
+
+```
+navegador --HTTPS--> reverse proxy/TLS --> web (Next BFF :3000) --HTTP--> api (NestJS :3333) --SSL--> Neon (Postgres)
+```
+
+- Empacotamento em **Docker** (imagens `apps/api/Dockerfile` e `apps/web/Dockerfile`, `node:20-slim`); orquestração em `docker-compose.prod.yml`.
+- **Web é BFF**: só o servidor Next fala com a API (`API_URL`); o navegador não acessa a API direto.
+- **Banco gerenciado (Neon)**, externo aos containers; migrations via `prisma migrate deploy` no release.
+- CI valida a construção das imagens (sem publicar). Guia completo em [DEPLOY.md](./DEPLOY.md).

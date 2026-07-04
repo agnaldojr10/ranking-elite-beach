@@ -18,7 +18,7 @@ function Submit({ label }: { label: string }) {
   return (
     <button
       disabled={pending}
-      className="rounded-md bg-ocean px-4 py-2 font-medium text-white hover:opacity-90 disabled:opacity-60"
+      className="rounded-md bg-ocean px-4 py-2 font-medium text-ocean-ink hover:opacity-90 disabled:opacity-60"
     >
       {pending ? 'Salvando…' : label}
     </button>
@@ -37,7 +37,7 @@ export function ChampionshipForm({
   submitLabel?: string;
 }) {
   const [state, formAction] = useFormState(action, {} as FormState);
-  const field = 'rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-ocean';
+  const field = 'h-11 rounded-2xl border border-line bg-surface-2 px-3 text-ink outline-none focus:border-ocean';
 
   return (
     <form action={formAction} className="flex max-w-lg flex-col gap-4">
@@ -100,14 +100,14 @@ export function ChampionshipForm({
       </label>
 
       {state?.error && (
-        <p role="alert" className="rounded-md bg-red-100 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
           {state.error}
         </p>
       )}
 
       <div className="flex items-center gap-3">
         <Submit label={submitLabel} />
-        <Link href="/championships" className="text-sm text-slate-500 hover:underline">
+        <Link href="/championships" className="text-sm text-ink-2 hover:underline">
           Cancelar
         </Link>
       </div>

@@ -29,7 +29,7 @@ export function Avatar({
 
   return (
     <div
-      className="flex items-center justify-center rounded-full bg-ocean font-semibold text-white"
+      className="flex items-center justify-center rounded-full bg-ocean font-semibold text-ocean-ink"
       style={{ width: size, height: size, fontSize: size * 0.4 }}
       aria-hidden
     >

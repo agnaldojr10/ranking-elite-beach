@@ -98,3 +98,13 @@ Calendário mensal com rodadas/finais/eventos/treinos; clique abre detalhe.
 
 ## 10. Componentes compartilhados
 Botões, inputs, tabela, modal/drawer, badge de status, KPI card, slider, empty-state, toast. Base: shadcn/ui + Tailwind. Acessibilidade AA (contraste, foco, teclado).
+
+## 11. Polimento (Fase 11 — fatia A, implementado)
+- **PWA**: `manifest.webmanifest`, service worker (`/sw.js`, network-first para navegação + fallback `/offline.html`), ícones SVG (`/icon.svg`, maskable), `theme_color`/`viewport` no layout, `ServiceWorkerRegister`. App instalável e com shell offline.
+- **Mobile-first**: `viewport` responsivo, inputs a 16px (evita zoom no iOS), `safe-area` no body, headers com `flex-wrap`, tabelas em `overflow-x-auto`.
+- **Boundaries**: `app/loading.tsx`, `app/error.tsx`, `app/not-found.tsx` (estados amigáveis).
+- **Guia do administrador**: `/help` — passo a passo do fluxo + regras-chave; atalho no dashboard.
+- Pendente da fase: Hardening da API (fatia B) e Deploy (fatia C).
+
+## 12. Redesign Bento "Praiano moderno" (light+dark)
+Redesenho completo da UI (Bento inspirado em Apple, mobile-first, tema claro+escuro). Sistema de design e tokens em **[DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)** (fonte da verdade). Fundação + Login/Dashboard/Rodada entregues; rollout das demais telas em andamento.

@@ -3,9 +3,63 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
+  --c-page: 244 241 234;
+  --c-surface: 255 255 255;
+  --c-surface-2: 250 248 244;
+  --c-ink: 15 23 42;
+  --c-ink-2: 71 85 105;
+  --c-muted: 148 163 184;
+  --c-line: 232 227 217;
+  --c-ocean: 14 116 144;
+  --c-ocean-ink: 255 255 255;
+  --c-coral: 255 111 82;
+  --c-ok: 16 185 129;
+  --c-warn: 245 158 11;
+  --c-danger: 239 68 68;
+}
+
+.dark {
+  color-scheme: dark;
+  --c-page: 10 20 23;
+  --c-surface: 16 31 36;
+  --c-surface-2: 22 38 44;
+  --c-ink: 241 245 249;
+  --c-ink-2: 203 213 225;
+  --c-muted: 139 160 168;
+  --c-line: 34 52 59;
+  --c-ocean: 45 212 191;
+  --c-ocean-ink: 5 46 52;
+  --c-coral: 255 138 106;
+  --c-ok: 52 211 153;
+  --c-warn: 251 191 36;
+  --c-danger: 248 113 113;
 }
 
 body {
-  @apply bg-sand text-slate-800 antialiased;
+  @apply bg-page text-ink antialiased;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+
+/* Transição suave ao alternar tema (respeita reduced-motion). */
+@media (prefers-reduced-motion: no-preference) {
+  body {
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+}
+
+/* Foco visível consistente. */
+:focus-visible {
+  outline: 2px solid rgb(var(--c-ocean));
+  outline-offset: 2px;
+}
+
+/* Evita zoom automático do iOS ao focar campos (fonte < 16px). */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }

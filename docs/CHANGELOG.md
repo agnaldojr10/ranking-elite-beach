@@ -4,6 +4,194 @@
 
 ---
 
+## [0.17.0] — 2026-07-04 — Fase 11 (fatia C): Deploy — Docker + guia (para QA)
+**Descrição:** Empacotamento para produção. Imagens Docker reproduzíveis (api + web), orquestração com Neon externo e guia de deploy. Sem migration; sem mudança de contratos. **Encerra a Fase 11** após aprovação.
+**Adicionado:**
+- **Dockerfiles multi-stage** (`apps/api/Dockerfile`, `apps/web/Dockerfile`) em `node:20-slim` (evita ciladas do Prisma no Alpine): API compila contracts→db(prisma generate)→api e roda `node dist/main.js` (usuário não-root, healthcheck); Web usa **Next standalone** (`output:'standalone'` + `outputFileTracingRoot` no `next.config.mjs`), servindo `server.js`.
+- **`docker-compose.prod.yml`**: serviços `api` (3333) e `web` (3000) + serviço `migrate` (profile `tools`) para `prisma migrate deploy`. **Banco é o Neon** (externo); o `docker-compose.yml` de dev segue só com Postgres local.
+- **`.dockerignore`** (contexto enxuto, sem segredos); **`docs/DEPLOY.md`** (Neon, checklist de env por app, migrations, subida, reverse proxy/TLS, health, rollback, alternativa PaaS).
+- **CI**: job `docker` valida `docker build` das duas imagens a cada push/PR (**sem** publicar — push é da operação).
+- `.env.example`: bloco de produção comentado (Neon SSL, segredos fortes, `API_URL` interno).
+**Migration:** nenhuma. **Contratos/API:** inalterados (102 testes intactos).
+**Verificação:** `next build` compila e gera as 17 páginas + build traces; a etapa de symlink do standalone falha **só no Windows** (privilégio de symlink) — em Linux (Docker/CI) conclui, coberto pelo job `docker`. Docker não instalado nesta máquina; validação das imagens fica pelo CI.
+**Pendências:** QA do PO. Após aprovação, **Fase 11 encerrada**; próximo grande passo: épico Portal do jogador.
+
+## [0.16.0] — 2026-07-04 — Fase 11 (fatia B): Hardening da API ✅ aprovado no QA
+**Descrição:** Reforço de segurança da API antes do deploy. Sem migration; sem mudança de contratos (escopo só na API). 102 testes verdes (97 + 5 do novo filtro).
+**Adicionado:**
+- **Helmet** (`main.ts`): cabeçalhos de segurança (`X-Content-Type-Options`, `X-Frame-Options`, `Strict-Transport-Security`, `X-DNS-Prefetch-Control`, etc.). CSP desligado para não quebrar o Swagger (`/api/docs`); `Cross-Origin-Resource-Policy: cross-origin` para o consumo pelo BFF. `trust proxy = 1` para o rate-limit enxergar o IP real atrás de proxy.
+- **Rate-limit** (`@nestjs/throttler`): guard global por IP (`THROTTLE_LIMIT`/`THROTTLE_TTL`, default 120 req/60s) via `APP_GUARD`; limite estrito nas credenciais (`AUTH_THROTTLE_LIMIT`, default 10 req/60s) com `@Throttle` em `POST /auth/login` e `/auth/refresh`; `/health` isento (`@SkipThrottle`). Estouro → `429 RATE_LIMITED`.
+- **Filtro global de exceções** `AllExceptionsFilter` (`APP_FILTER`) com helper puro `toErrorResponse`: garante o formato `{ error: { code, message, details? } }` em 100% das respostas (repassa erros já no formato; mapeia `HttpException` cru para code do status, ex. 404→`NOT_FOUND`; `ThrottlerException`→`429 RATE_LIMITED`; erro inesperado→`500 INTERNAL_ERROR` sem vazar stack, logando a causa só no servidor).
+- **Env**: `THROTTLE_TTL`/`THROTTLE_LIMIT`/`AUTH_THROTTLE_LIMIT` (com defaults) em `config/env.ts` e `.env.example`.
+**Migration:** nenhuma. **Contratos/API:** formato de erro inalterado (agora garantido também para 401/404/429/500 padrão do Nest).
+**Pendências:** QA do PO (roteiro QA-H no TEST_PLAN). Falta Deploy (fatia C) para encerrar a Fase 11. Épico Portal do jogador registrado.
+
+## [0.15.2] — 2026-07-04 — Redesign aprovado (todas as telas)
+**Aprovado:** redesign Bento "Praiano moderno" (claro+escuro) em todo o app, validado no QA do PO. **Próxima:** Fase 11 fatia B (Hardening da API).
+
+## [0.15.1] — 2026-07-04 — Redesign: rollout a todas as telas (light+dark)
+**Descrição:** Aplicação do design Bento "Praiano moderno" (claro+escuro) ao restante das telas, reusando os primitivos. Sem migration; só apresentação.
+**Adicionado/alterado:**
+- Todas as telas migradas para os tokens semânticos (funcionam nos 2 temas): Jogadores (lista/perfil/novo/editar), Temporadas, Campeonatos (lista/detalhe/novo/editar/config), Rodadas (nova/sorteio/resultados/mata-mata), Ranking, Quadras, Agenda, Help, boundaries.
+- Cards elevados a tiles (`rounded-3xl` + `shadow-tile`), headers translúcidos (`sticky` + `backdrop-blur`), botões em pílula; `LineChart` tokenizado (grade/eixos via tokens); formulários e `Avatar` tokenizados.
+**Migration:** nenhuma. **Contratos/API:** inalterados (118 testes intactos).
+**Pendências:** QA visual (claro+escuro, mobile+desktop) em todo o app. Refino opcional: adotar `AppShell` formal em todas as páginas. (Hardening/Deploy da Fase 11 seguem pendentes; épico Portal do jogador registrado.)
+
+## [0.15.0] — 2026-07-04 — Redesign UI/UX Bento "Praiano moderno" — fundação + vitrine (para QA)
+**Descrição:** Redesenho sério da interface (pedido do PO), estilo Bento Box inspirado em apps Apple, mobile-first, com **tema claro + escuro**. Fundação do design system + telas-vitrine; demais telas no rollout seguinte. Sem migration; puramente apresentação.
+**Adicionado:**
+- **Design system**: tokens semânticos (CSS vars light/dark) em `globals.css`, Tailwind `darkMode:'class'` + cores/raios/sombras/fonte; script sem-flash de tema e `theme-color` por tema no `layout.tsx`.
+- **Primitivos** `components/ui/`: `Tile`, `AppShell`, `Button`/`ButtonLink`, `Badge`, `StatTile`, `SectionTitle`, `EmptyState`, `ThemeToggle`, `icons` (SVG, sem emoji).
+- **Telas redesenhadas (light+dark)**: **Login** (tile de marca, senha com toggle), **Dashboard** (vitrine bento — KPIs, próxima rodada, últimos campeões, top ranking, navegação por ícones), **Detalhe da rodada** (AppShell + tiles + prontidão em destaque + inscritos como lista mobile-friendly).
+- `docs/DESIGN_SYSTEM.md` (novo) — fonte da verdade do rollout.
+**Migration:** nenhuma. **Contratos/API:** inalterados (118 testes intactos).
+**Pendências:** QA do visual (claro+escuro, mobile+desktop). Rollout do restante das telas ao novo estilo. (Hardening/Deploy da Fase 11 seguem pendentes.)
+
+## [0.14.0] — 2026-07-04 — Fase 11 (fatia A): PWA + Polimento mobile-first + Guia do admin (para QA)
+**Descrição:** Acabamento com foco em usabilidade mobile-first e onboarding de administradores. Sem migration; mudanças de web/estáticos.
+**Adicionado:**
+- **PWA**: `public/manifest.webmanifest`, service worker (`public/sw.js`, network-first + `public/offline.html`), ícones SVG (normal + maskable), registro via `ServiceWorkerRegister`; `layout.tsx` com `metadata.manifest/icons/appleWebApp` e `viewport` (themeColor `#0e7490`, device-width). App instalável e com shell offline.
+- **Mobile-first**: inputs 16px (evita zoom iOS), `safe-area` no body, headers com `flex-wrap`, tabelas em `overflow-x-auto`.
+- **Boundaries**: `loading.tsx`, `error.tsx`, `not-found.tsx` globais; favicon `app/icon.svg`.
+- **Guia do administrador**: `/help` (passo a passo do fluxo + regras-chave); atalho "Como funciona" no dashboard.
+**Migration:** nenhuma.
+**Pendências:** QA do PO. Faltam Hardening da API (fatia B) e Deploy (fatia C) para encerrar a Fase 11.
+
+## [0.13.1] — 2026-07-04 — Fase 10 aprovada + rótulo da fase final
+**Descrição:** Fase Final validada no QA do PO. Refinamento incluído: a fase final é rotulada como **"Fase Final — {campeonato}"** (em vez de "Rodada N") em todas as telas, diferenciando-a das rodadas regulares.
+**Adicionado:** helper `roundLabel` (contracts); `Round` expõe `championshipName`; dashboard expõe `kind` de próxima rodada/últimos resultados.
+**Aprovado:** Fase 10 (Fase Final do campeonato). **Próxima:** Fase 11 (Polimento, PWA, hardening, deploy).
+
+## [0.13.0] — 2026-07-03 — Fase 10: Fase Final do campeonato (para QA)
+**Descrição:** Desfecho do campeonato — classifica os melhores por pontuação acumulada e disputa a fase final com novo sorteio ignorando o histórico de parceiros (BR-34). Sem migration (reusa `RoundKind.FINAL_PHASE`).
+**Adicionado:**
+- `@reb/contracts`: `finals.ts` (`FinalState`).
+- API: `FinalsModule` — `POST /championships/:id/finals/generate` (classifica os `qualifiers_count` melhores jogadores por pontos e cria a rodada `FINAL_PHASE` com eles CONFIRMED) e `GET /championships/:id/finals` (estado + campeão). `DrawService` no modo final ignora histórico (allowRepeatPartners, peso de parceiro 0, sem deltas). `RankingService` passa a **excluir** rodadas `FINAL_PHASE` (ranking = temporada regular).
+- Web: seção "Fase final" no detalhe do campeonato — "Gerar fase final" (quando ativo), link para a rodada final e selo do campeão quando encerrada. A rodada final reusa as telas de sorteio/resultados/mata-mata.
+- Testes: `FinalStateSchema` — total 118 no monorepo.
+**Migration:** nenhuma.
+**Pendências:** QA do PO. Resta a Fase 11 (Polimento, PWA, hardening, deploy).
+
+## [0.12.1] — 2026-07-03 — Fase 9 aprovada
+**Descrição:** Quadras e Agenda validadas no QA do PO.
+**Aprovado:** Fase 9 (Quadras e Agenda). **Próxima:** Fase 10 (Fase Final do campeonato).
+
+## [0.12.0] — 2026-07-03 — Fase 9: Quadras e Agenda (para QA)
+**Descrição:** Cadastro de quadras + vínculo de quadra/horário aos jogos (RF-29) e agenda com rodadas, finais, eventos e treinos (RF-30).
+**Adicionado:**
+- Prisma: enum `CalendarEventType`; models `Venue` e `CalendarEvent`; `Match.venueId` (FK→Venue, SetNull).
+- `@reb/contracts`: `venue.ts` (`CreateVenue`/`UpdateVenue`/`Venue`, `AvailabilitySlot`, `ScheduleMatch`) e `calendar.ts` (`CalendarEventType`+rótulos, `CreateCalendarEvent`, `CalendarItem`, `CalendarQuery`); `MatchView`/`KnockoutMatchView` ganham `venueId`/`venueName`/`scheduledAt`.
+- API: `VenuesModule` (CRUD), `CalendarModule` (`GET/POST/DELETE /calendar`), `PATCH /matches/:id/schedule`. Escopo por clube + RBAC.
+- Web: telas de Quadras (lista/criar/editar/excluir) e Agenda (lista mensal com navegação, badges por tipo, criar/remover treino/evento); vínculo de quadra/horário por jogo na tela de resultados e no mata-mata; atalhos "Quadras" e "Agenda" no dashboard. Middleware passa a proteger `/rounds`, `/venues`, `/calendar`.
+- Testes: 13 casos de schemas de quadra/agenda — total 115 no monorepo.
+**Migration:** `venues_calendar` (Venue + CalendarEvent + Match.venueId) criada pelo QA no `pnpm db:migrate`.
+**Pendências:** QA do PO. Restam Fase 10 (Fase Final do campeonato) e Fase 11 (Polimento/PWA/deploy).
+
+## [0.11.1] — 2026-07-03 — Sprint 8 aprovada
+**Descrição:** Estatísticas por jogador e dashboard validados no QA do PO.
+**Aprovado:** Sprint 8 (Estatísticas e Dashboard). **Próxima:** Fase 9 (Quadras e Agenda).
+
+## [0.11.0] — 2026-07-03 — Sprint 8: Estatísticas e Dashboard (para QA)
+**Descrição:** Estatísticas por jogador (RF-27) e dashboard (RF-28), tudo derivado dos dados existentes. Sem migration. Gráficos em SVG inline (sem dependência), seguindo boas práticas de dataviz.
+**Adicionado:**
+- `@reb/contracts`: `stats.ts` — `PlayerStats`, `DashboardSummary` e helper puro `computeStreaks` (maiores sequências V/D).
+- API: `StatsModule` — `GET /players/:id/stats` (pontos, aproveitamento, média, melhor/pior colocação, títulos, finais, sequências, parceiro favorito, adversário mais enfrentado; W.O. por lesão não penaliza — BR-32) e `GET /dashboard` (KPIs, próxima rodada, últimos resultados, top ranking). Reutiliza `RankingService`.
+- Web: perfil do jogador com estatísticas reais (substitui o placeholder da Sprint 2); dashboard com KPIs, próxima rodada, últimos campeões e top do ranking (gráfico de barras); gráfico de linha da evolução na tela de ranking. Componentes `charts/BarChartH` e `charts/LineChart` (SVG/HTML, responsivos, acessíveis).
+- Testes: 7 casos de `computeStreaks`/schemas — total 102 no monorepo.
+**Migration:** nenhuma.
+**Pendências:** QA do PO. Restam Quadras/Agenda (Fase 9), Fase Final do campeonato (Fase 10) e Polimento/PWA/deploy (Fase 11).
+
+## [0.10.1] — 2026-07-03 — Sprint 7 aprovada
+**Descrição:** Ranking por escopo (campeonato/temporada/geral), aproveitamento, desempates e evolução validados no QA do PO.
+**Aprovado:** Sprint 7 (Classificação, Pontuação e Ranking). **Próxima:** Sprint 8 (Estatísticas e Dashboard).
+
+## [0.10.0] — 2026-07-03 — Sprint 7: Classificação, Pontuação e Ranking (para QA)
+**Descrição:** Ranking de jogadores por escopo (campeonato/temporada/geral) somando os pontos das rodadas, com aproveitamento, desempates (BR-31/32/33) e evolução por rodada. Sem migration — computado sob demanda.
+**Adicionado:**
+- `@reb/contracts`: `ranking.ts` — `RankingScope` + rótulos, `Ranking`/`RankingEntry`, `RankingEvolution`, e helpers puros `rankPlayers` (ordena por pontos → saldo → aproveitamento → nome) e `computeWinRate` (exclui W.O. por lesão na origem).
+- API: `RankingModule` — `GET /championships/:id/ranking?scope=CHAMPIONSHIP|SEASON|GLOBAL` e `GET /championships/:id/ranking/evolution`. Agrega `RoundResult` (pontos) e `Match` (V/D, saldo; ignora derrota por W.O. de lesão — BR-32) por jogador via `TeamPlayer`.
+- Web: tela `/championships/:id/ranking` com seletor de escopo, tabela (posição, pontos, jogos, V/D, saldo, aproveitamento) e **evolução** (acumulado por rodada); botão "Ranking" no detalhe do campeonato.
+- Testes: 8 casos de `rankPlayers`/`computeWinRate`/schemas — total 95 no monorepo.
+**Migration:** nenhuma.
+**Pendências:** QA do PO. Estatísticas por jogador e dashboard com gráficos são a Sprint 8.
+
+## [0.9.1] — 2026-07-03 — Sprint 6 aprovada (rodada completa)
+**Descrição:** Fatia B (mata-mata + colocação + pontos) validada no QA do PO: fase final gerada pós-grupos e pontos lançados. Migration `knockout_placement` aplicada. Sprint 6 concluída.
+**Aprovado:** Sprint 6 (Grupos, Jogos e Resultados). **Próxima:** Sprint 7 (Classificação, Pontuação e Ranking).
+
+## [0.9.0] — 2026-07-03 — Sprint 6 (fatia B): Mata-mata da rodada + colocação + pontos (para QA)
+**Descrição:** Fecha a rodada: mata-mata intra-rodada a partir dos classificados (FORMATS.md), disputa de 3º lugar, colocação final 1..D e pontos por colocação via `scoring_table` (BR-30). Conclui a Sprint 6.
+**Adicionado:**
+- Prisma: enum `MatchPhase`; `Match` ganha `phase`/`round_id`/`stage`/`slot` (`group_id` nullable); novo `RoundResult` (colocação + pontos).
+- `@reb/contracts`: `knockout.ts` — helpers puros `selectQualifiers`, `firstRoundPairings`/`nextStagePairings`/`seedOrder`, `computeRoundPlacement`, `pointsForPlacement`, `stageCode`/`STAGE_LABELS`; views `KnockoutView`/`RoundResultView`.
+- API: `KnockoutService` — `POST /rounds/:id/knockout/generate`, `GET /rounds/:id/knockout`, `GET /rounds/:id/result`; **geração progressiva** (uma fase por vez) e **finalização** (grava `RoundResult` + rodada `FINISHED`). `PATCH /matches/:id/result` passa a aceitar jogos de mata-mata e avança a chave. Erros `GROUP_STAGE_INCOMPLETE`/`KNOCKOUT_EXISTS`/`KNOCKOUT_NOT_READY`.
+- Web: tela `/rounds/:id/knockout` — "Gerar mata-mata", chave por fase com lançamento de placar (reusa `MatchResultForm`) e **colocação final + pontos**; links "Resultados"/"Mata-mata" na rodada.
+- Testes: 9 casos de classificados/chaveamento/colocação/pontos — total 87 no monorepo.
+**Migration:** `knockout_placement` (Match + RoundResult) criada pelo QA no `pnpm db:migrate`.
+**Pendências:** QA do PO. Ranking do campeonato (agregação por escopo, desempates, evolução) é a Sprint 7.
+
+## [0.8.1] — 2026-07-03 — Correção: sorteio bloqueado após resultados
+**Descrição:** Ajuste identificado no QA da fatia A. A tela de sorteio voltava a exibir o simulador quando a rodada estava `IN_PROGRESS` (após lançar resultados), permitindo re-simular.
+**Corrigido:**
+- Web: `/rounds/:id/draw` trata `DRAWN`/`IN_PROGRESS`/`FINISHED` como sorteio confirmado (somente leitura); botão "Descartar sorteio" só aparece enquanto `DRAWN` (sem resultados).
+- API: `DELETE /rounds/:id/draw` bloqueia com `409 DRAW_HAS_RESULTS` se já houver jogos com resultado (evita apagar jogos/resultados e reverter histórico).
+**Regra confirmada com o PO:** após o sorteio, as duplas estão confirmadas; não há alteração/refazer enquanto a rodada tem resultados.
+
+## [0.8.0] — 2026-07-03 — Sprint 6 (fatia A): Jogos e Resultados — fase de grupos (para QA)
+**Descrição:** Registro de resultados dos jogos de grupo, com vencedor derivado do placar (BR-25), W.O. (BR-27), classificação do grupo com desempates (BR-28/29) e auditoria de alterações.
+**Adicionado:**
+- Prisma: `Match` ganha `updated_at`/`updated_by`/`created_at`; novo `MatchResultLog` (auditoria antes/depois). Classificação computada em runtime.
+- `@reb/contracts`: `match.ts` — `SetScoreSchema`, `RegisterMatchResultSchema` (sets **ou** W.O.), `MatchViewSchema`, `StandingSchema`/`GroupStandingsSchema`, e helpers puros `computeMatchWinner` (BR-25) e `computeGroupStandings` (BR-28/29).
+- API: `MatchesModule` — `GET /rounds/:id/matches`, `GET /rounds/:id/standings`, `PATCH /matches/:id/result` (valida escopo/rodada, deriva vencedor, trata W.O., grava auditoria transacional; 1º resultado → rodada `IN_PROGRESS`). Erros `INVALID_SCORE`/`INVALID_WALKOVER`/`ROUND_NOT_DRAWN`.
+- Web: tela `/rounds/:id/results` — classificação por grupo + lançamento de placar por jogo (sets conforme formato) e opção W.O. (com "por lesão"); botão "Resultados" na rodada e no sorteio confirmado.
+- Testes: 15 casos de `computeMatchWinner`/`computeGroupStandings`/schema — total 78 no monorepo.
+**Migration:** `match_results` (Match + MatchResultLog) criada pelo QA no `pnpm db:migrate`.
+**Pendências:** QA do PO. Mata-mata intra-rodada + colocação final/pontos vêm na próxima fatia (ponte para a Sprint 7).
+
+## [0.7.1] — 2026-07-03 — Sprint 5 aprovada (Motor de Sorteio completo)
+**Descrição:** Fatia "confirmar sorteio" validada no QA do PO; sorteio confirmado e persistido com sucesso. Migration `draw_persistence` aplicada. Sprint 5 concluída (motor + simular + confirmar/persistência/histórico).
+**Aprovado:** Sprint 5 (Motor de Sorteio). **Próxima:** Sprint 6 (Jogos e Resultados).
+
+## [0.7.0] — 2026-07-03 — Sprint 5: Confirmar sorteio + persistência + histórico (para QA)
+**Descrição:** Fecha o ciclo do Motor de Sorteio — gravar o sorteio escolhido e alimentar o histórico de parceiros/adversários, para que as próximas rodadas evitem repetições (BR-13/14/20).
+**Adicionado:**
+- Prisma: enum `MatchStatus`; models `Draw`, `Team`, `TeamPlayer`, `Group`, `GroupTeam`, `Match`, `PartnerHistory`, `OpponentHistory` (+ relações/índices). Ver DATABASE.md §3a.
+- `@reb/contracts`: `ConfirmDrawSchema` (seed obrigatória), `ConfirmedDrawSchema`/`ConfirmedMatchSchema`, `MatchStatusSchema` + rótulos.
+- API: `POST /rounds/:id/draw/confirm` (re-roda o motor com a seed exibida e **persiste** duplas/grupos/jogos numa transação; rodada → `DRAWN`; **incrementa** histórico), `GET /rounds/:id/draw` (sorteio confirmado), `DELETE /rounds/:id/draw` (descarta, **reverte** histórico, rodada → `OPEN`). `409 DRAW_EXISTS` bloqueia re-sorteio até descartar. `HistoryService` com loader e deltas transacionais; `simulate`/`confirm` passam a **carregar o histórico real**.
+- Web: botão "Confirmar este sorteio" na simulação; tela de sorteio mostra o resultado gravado (com status dos jogos) + "Descartar sorteio"; na rodada, o botão vira "Ver sorteio" quando `DRAWN`.
+- Testes: 7 casos puros de deltas de histórico (incremento/acúmulo/reversão simétrica/produto cruzado) — total 63 no monorepo.
+**Migration:** `draw_persistence` (Draw/Team/TeamPlayer/Group/GroupTeam/Match + histórico) criada pelo QA no `pnpm db:migrate`.
+**Pendências:** QA do PO. Registro de resultados dos jogos entra na Sprint 6. Ranking segue por proxy de `skillLevel` até a Sprint 7.
+
+## [0.6.1] — 2026-07-03 — Sprint 5 (fatia motor + simular) aprovada
+**Descrição:** Fatia "motor + simular" da Sprint 5 validada no QA do PO e aprovada. Sem migration.
+**Aprovado:** motor de sorteio (`@reb/sort-engine`) + endpoint `simulate` + tela de simulação. **Próxima fatia:** confirmar sorteio + persistência + histórico.
+
+## [0.6.0] — 2026-07-03 — Sprint 5: Motor de Sorteio — motor + simular (para QA)
+**Descrição:** Coração do produto — o Motor Inteligente de Sorteio (pacote TS puro, determinístico) e a simulação de sorteio de uma rodada. Fatia 5a+5b+5c-simular; o "confirmar sorteio" (persistência) vem a seguir.
+**Adicionado:**
+- Pacote **`packages/sort-engine`** (`@reb/sort-engine`): PRNG semeável (mulberry32), emparelhamento greedy + 2-opt, agrupamento balanceado, round-robin, métricas, score de qualidade (0–100) e explicações — tudo determinístico via seed. 21 testes (8/16/32/64 jogadores, determinismo, invariantes, histórico saturado, randomness 0×100).
+- `@reb/contracts`: `draw.ts` — `DrawConfig`, `SimulateDraw`, `DrawResult`/`DrawMetrics`, `SKILL_STRENGTH`, `pairKey`; `RoundFormatSchema` exportado.
+- API: `DrawService` + **`POST /rounds/:id/draw/simulate`** (não persiste — BR-19). **Enforcement** `409 ODD_PLAYER_COUNT` / `422 PLAYER_COUNT_OUT_OF_RANGE` (BR-07/08/11) — prometido na Sprint 4, aterrissa aqui.
+- Web: tela **`/rounds/:id/draw`** com score, métricas, duplas, grupos/confrontos e explicações; slider de aleatoriedade e botão "Regenerar"; botão "Simular sorteio" na rodada (habilitado só quando pronta).
+**Migration:** nenhuma (sem mudança de schema nesta fatia).
+**Pendências:** QA do PO. Ranking usa proxy por `skillLevel` até a Sprint 7. Histórico de parceiros/adversários é suportado pelo motor, porém vazio em runtime até a fatia de "confirmar".
+
+## [0.5.1] — 2026-07-03 — Sprint 4 aprovada
+**Descrição:** Sprint 4 (Rodadas e Inscrições) validada no QA do PO e aprovada. Migration `rounds_registrations` aplicada no banco (Neon).
+**Aprovado:** Sprint 4 (Rodadas e Inscrições). **Próxima:** Sprint 5 (Motor de Sorteio).
+
+## [0.5.0] — 2026-07-03 — Sprint 4: Rodadas e Inscrições (para QA)
+**Descrição:** Criação/gestão de rodadas dentro do campeonato e fluxo de inscrições (presença, lista de espera manual, substituição), com a validação de prontidão que prepara o sorteio (Sprint 5).
+**Adicionado:**
+- Prisma: enums `RoundStatus` (SCHEDULED/OPEN/DRAWN/IN_PROGRESS/FINISHED), `RoundKind` (REGULAR/FINAL_PHASE), `RegistrationStatus` (CONFIRMED/PENDING/ABSENT/WAITLIST); models `Round` (nº único por campeonato, `match_format` JSONB, `group_size_pref`, `kind`) e `Registration` (única por rodada+jogador, `substituted_by`) + relações e índices.
+- `@reb/contracts`: `round.ts` com schemas de rodada e inscrição, `MatchFormatSchema` (default 1 set — BR-26), rótulos pt-BR, e helpers puros `computeRoundReadiness` (par/8–64 — BR-07/08/11), `partitionGroups` e `describeRoundFormat` (prévia de formato espelhando FORMATS.md — BR-23).
+- API: `RoundsModule` — `RoundsController` (listar/criar rodada sob o campeonato, detalhar, editar, abrir/fechar inscrições, inscrever) e `RegistrationsController` (mudar situação, substituir, remover); escopo por clube; RBAC (Admin/Organizador escrevem). Regras: jogador INACTIVE → 422 `PLAYER_INACTIVE` (BR-03), inscrição duplicada → 409 `REGISTRATION_EXISTS` (BR-09), numeração automática com unicidade.
+- Web: seção "Rodadas" no detalhe do campeonato, tela de nova rodada (`RoundForm`) e detalhe da rodada com **banner de prontidão**, **prévia de formato**, resumo de inscrições e gestão de inscritos (confirmar/pendente/ausente/lista de espera, substituir, remover) via Server Actions.
+- Testes (vitest): 18 casos de schemas/helpers de rodada (formato de partida, prontidão, partição de grupos, matriz de formato); roteiro de QA da Sprint 4 no TEST_PLAN.
+**Migration:** tabelas `round` e `registration` (+ enums) criadas pelo QA no `pnpm db:migrate`.
+**Pendências:** QA do PO. Transição `DRAWN` e enforcement de `ODD_PLAYER_COUNT`/`PLAYER_COUNT_OUT_OF_RANGE` ficam no endpoint de sorteio (Sprint 5); a prontidão já é calculada/exibida.
+
 ## [0.4.1] — 2026-07-03 — DX: scripts de dev e Sprint 3 aprovada
 **Descrição:** Sprint 3 validada e aprovada no QA do PO. Ajuste de developer experience.
 **Adicionado:** scripts raiz `dev:api` e `dev:web` (reconstroem `@reb/contracts` antes de subir, evitando erros de exports desatualizados ao rodar serviços isoladamente) e `packages:build`.

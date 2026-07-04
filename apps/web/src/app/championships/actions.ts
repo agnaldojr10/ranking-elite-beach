@@ -127,3 +127,12 @@ export async function setChampionshipStatusAction(
   revalidatePath(`/championships/${id}`);
   revalidatePath('/championships');
 }
+
+export async function generateFinalAction(championshipId: string): Promise<void> {
+  const res = await apiFetch<{ roundId: string }>(
+    `/championships/${championshipId}/finals/generate`,
+    { method: 'POST' },
+  );
+  revalidatePath(`/championships/${championshipId}`);
+  if (res.ok) redirect(`/rounds/${res.data.roundId}`);
+}

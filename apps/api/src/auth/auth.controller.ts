@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, Post, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import {
   LoginRequestSchema,
   RefreshRequestSchema,
@@ -16,6 +17,13 @@ import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
+// Limite estrito nas rotas de credenciais (anti brute-force). Lido de env com
+// os mesmos defaults do EnvSchema — decorators são avaliados antes do ConfigModule.
+const AUTH_THROTTLE = {
+  ttl: Number(process.env.THROTTLE_TTL ?? 60) * 1000,
+  limit: Number(process.env.AUTH_THROTTLE_LIMIT ?? 10),
+};
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -26,6 +34,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(200)
+  @Throttle({ default: AUTH_THROTTLE })
   @ApiOperation({ summary: 'Autentica e emite tokens' })
   login(
     @Body(new ZodValidationPipe(LoginRequestSchema)) dto: LoginRequest,
@@ -35,6 +44,7 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(200)
+  @Throttle({ default: AUTH_THROTTLE })
   @ApiOperation({ summary: 'Renova o par de tokens' })
   refresh(
     @Body(new ZodValidationPipe(RefreshRequestSchema)) dto: RefreshRequest,

@@ -3,14 +3,12 @@
 import { useEffect, useRef } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { createSeasonAction, type FormState } from '@/app/seasons/actions';
+import { buttonClass } from '@/components/ui/Button';
 
 function Submit() {
   const { pending } = useFormStatus();
   return (
-    <button
-      disabled={pending}
-      className="rounded-md bg-ocean px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
-    >
+    <button disabled={pending} className={buttonClass('primary', 'md')}>
       {pending ? 'Criando…' : 'Criar temporada'}
     </button>
   );
@@ -24,7 +22,8 @@ export function SeasonCreateForm() {
     if (state.ok) formRef.current?.reset();
   }, [state.ok]);
 
-  const field = 'rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-ocean';
+  const field =
+    'h-11 rounded-2xl border border-line bg-surface-2 px-3 text-sm text-ink outline-none focus:border-ocean';
 
   return (
     <form ref={formRef} action={action} className="flex flex-wrap items-end gap-3">
@@ -38,7 +37,7 @@ export function SeasonCreateForm() {
       </label>
       <Submit />
       {state.error && (
-        <p role="alert" className="w-full rounded-md bg-red-100 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="w-full rounded-2xl bg-danger/10 px-3 py-2 text-sm text-danger">
           {state.error}
         </p>
       )}
