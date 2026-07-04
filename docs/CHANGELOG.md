@@ -4,6 +4,9 @@
 
 ---
 
+## [0.17.1] — 2026-07-04 — Fase 11 encerrada (Deploy aprovado)
+**Aprovado:** fatia C (Deploy) validada pelo PO. **Fase 11 concluída** (PWA + redesign + hardening + deploy). Projeto publicado em repositório privado; CI verde no `main` (typecheck/lint/testes/build + build das imagens Docker). **Próximo grande passo:** épico **Portal do jogador**.
+
 ## [0.17.0] — 2026-07-04 — Fase 11 (fatia C): Deploy — Docker + guia (para QA)
 **Descrição:** Empacotamento para produção. Imagens Docker reproduzíveis (api + web), orquestração com Neon externo e guia de deploy. Sem migration; sem mudança de contratos. **Encerra a Fase 11** após aprovação.
 **Adicionado:**

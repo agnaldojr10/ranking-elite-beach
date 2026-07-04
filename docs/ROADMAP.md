@@ -20,7 +20,8 @@
 | 8 | Estatísticas e Dashboard | ✔ Concluído e aprovado | Fase 7 |
 | 9 | Quadras e Agenda | ✔ Concluído e aprovado | Fase 6 |
 | 10 | Fase Final (chaveamento) | ✔ Concluído e aprovado | Fase 7 |
-| 11 | Polimento, PWA, hardening, deploy | ▶ Em andamento — PWA ✔; redesign UI ✔; hardening da API ✔ aprovado; **deploy** (Docker + guia + CI) p/ QA → encerra a fase | Fases 1–10 |
+| 11 | Polimento, PWA, hardening, deploy | ✔ Concluído e aprovado — PWA + redesign UI + hardening + deploy (Docker/Neon + CI) | Fases 1–10 |
+| 12 | **Portal do jogador** (app imersivo do atleta) | ⏳ Próximo — épico (auto-cadastro, dados próprios, torneios que joga) | Fase 11 |
 
 ## Ordem recomendada de implementação
 Fundação → dados de base (jogadores/campeonatos/rodadas) → **sorteio** → jogos/resultados → ranking/stats → periféricos (quadras/agenda/final) → polimento. O sorteio vem cedo (Fase 5) por ser o maior risco/diferencial, mas depende de ter jogadores e rodadas para operar.
