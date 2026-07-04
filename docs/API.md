@@ -19,10 +19,24 @@
 ## 2. Autenticação
 | Método | Rota | Descrição |
 |---|---|---|
-| POST | `/auth/login` | `{email,password}` → `{accessToken, refreshToken}` |
+| POST | `/auth/login` | `{email,password}` → `{accessToken, refreshToken, user}` |
+| POST | `/auth/claim` | `{code,email,password}` → ativa a conta do atleta via convite (cria login PLAYER) e retorna tokens |
 | POST | `/auth/refresh` | renova access token |
-| POST | `/auth/logout` | invalida refresh |
-| GET | `/auth/me` | usuário atual + papel |
+| GET | `/auth/me` | usuário atual + papel (`user.playerId` quando for atleta) |
+
+## 2.1 Portal do Jogador (Fase 12)
+Fluxo por **convite**: a organização gera um código para um `Player`; o atleta o usa em `/auth/claim`. O JWT passa a carregar `playerId`; os endpoints `/me/*` são escopados ao próprio atleta e exigem papel **PLAYER**.
+
+| Método | Rota | Papel | Descrição |
+|---|---|---|---|
+| POST | `/players/:id/invite` | ADMIN/ORGANIZER | gera convite; retorna `{code, expiresAt}` (código em claro só aqui) |
+| GET | `/me/profile` | PLAYER | dados do próprio atleta |
+| GET | `/me/stats` | PLAYER | números completos (V/D, títulos, sequências, parceiro favorito…) |
+| GET | `/me/ranking` | PLAYER | posição no campeonato ativo + variação (▲▼) |
+| GET | `/me/matches` | PLAYER | todos os jogos do atleta (do ponto de vista dele) |
+| GET | `/me/next-match` | PLAYER | próximo jogo (agendado mais próximo) |
+
+Erros do convite: `INVALID_INVITE` (404/401), `INVITE_USED` (409), `INVITE_EXPIRED` (409), `EMAIL_EXISTS` (409), `PLAYER_ALREADY_CLAIMED` (409). As leituras de backoffice (`/players/:id/stats`, `/championships/:id/ranking`, `/rounds/*`, etc.) são **fechadas ao papel PLAYER** — o atleta usa apenas `/me/*`.
 
 ## 3. Jogadores
 | Método | Rota | Papel | Descrição |

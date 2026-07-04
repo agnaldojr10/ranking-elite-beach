@@ -7,5 +7,6 @@ import { StatsService } from './stats.service';
   imports: [RankingModule],
   controllers: [StatsController],
   providers: [StatsService],
+  exports: [StatsService],
 })
 export class StatsModule {}

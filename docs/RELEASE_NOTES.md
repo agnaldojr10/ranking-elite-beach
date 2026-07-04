@@ -4,6 +4,25 @@
 
 ---
 
+## v0.18.0 — Portal do Jogador: primeira versão (2026-07-04)
+
+**Novidades**
+- Nasce o **Meu Beach**, o app do atleta — separado do sistema da organização, com visual **imersivo** (dark, praiano) e instalável (PWA).
+- **Ativação por convite:** a organização gera um código; o jogador ativa a conta (e-mail + senha) e passa a ver **só os dados dele**.
+- **Home** com destaque do atleta, **próximo jogo com contagem regressiva** (adversário, quadra, horário), seus números e a **posição no ranking** (com indicador de subida/queda).
+- **Perfil** com números completos (vitórias, aproveitamento, títulos, sequências, parceiro favorito, maior rival) e **Meus jogos** (agenda + histórico).
+
+**Segurança**
+- O atleta acessa apenas as suas informações; as telas administrativas ficam restritas à organização.
+
+**Pendências**
+- QA do PO. A publicação/hospedagem do portal (subdomínio próprio) é da operação.
+
+**Próximos passos**
+- Meus Torneios (chave/grupos), comparação direta (H2H), gamificação (medalhas/sequências) e notificações push.
+
+---
+
 ## v0.17.0 — Fase 11: Pronto para produção (Docker + guia de deploy) (2026-07-04)
 
 **Novidades**

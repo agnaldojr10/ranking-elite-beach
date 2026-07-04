@@ -277,6 +277,21 @@
 
 **Critérios de aceite:** QA-H1 a QA-H8 verdes. Encerra o hardening; resta o Deploy (fatia C) para fechar a Fase 11.
 
+### Roteiro de QA — Fase 12 (fatia 1 — Portal do Jogador)
+
+> Pré: migration `player_portal` aplicada (`pnpm db:migrate`). Rodar API (:3333), web (:3000) e portal (:3001). O atleta usa o **portal**; a organização, o **web**.
+
+- **QA-PP1 (gerar convite):** no web (admin), obter convite de um jogador — `POST /players/:id/invite` → retorna um **código** (ex.: `ABCD-EFGH-JKMN`) e validade.
+- **QA-PP2 (ativar conta):** no portal `/claim`, informar código + e-mail + senha (≥8) → entra e cai na **Home**; refazer com o mesmo código → **INVITE_USED**; código errado → **INVALID_INVITE**.
+- **QA-PP3 (Home):** herói do atleta com foto/nível, posição no ranking (▲▼ se houver base), aproveitamento; **próximo jogo** mostra adversário/quadra/horário e **contagem regressiva** correta; KPIs coerentes com o histórico.
+- **QA-PP4 (Perfil e Jogos):** `/perfil` mostra números completos; `/jogos` lista "a jogar" e "histórico" com resultado/placar corretos do ponto de vista do atleta.
+- **QA-PP5 (escopo/segurança):** o atleta vê **apenas os próprios dados**; um login PLAYER **não** acessa endpoints de backoffice (`/players/:id/stats`, `/championships/:id/ranking`, `/rounds/*` → 403) nem as telas do web.
+- **QA-PP6 (login normal):** sair e entrar de novo por e-mail/senha em `/login`; sessão persiste (refresh transparente).
+- **QA-PP7 (PWA):** instalar o portal (manifest/ícones próprios "Meu Beach"); offline → tela `offline.html`.
+- **QA-PP8 (regressão):** web/admin segue funcionando (contas ADMIN/ORGANIZER inalteradas); `pnpm test` (108) e `pnpm build` verdes.
+
+**Critérios de aceite:** QA-PP1 a QA-PP8 verdes. Fatia 1 do épico concluída após aprovação.
+
 ---
 
 ## Formato de reporte de bug (para o QA)

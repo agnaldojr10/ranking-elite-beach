@@ -41,5 +41,7 @@ export const JwtPayloadSchema = z.object({
   email: z.string().email(),
   role: RoleSchema,
   clubId: z.string().uuid(),
+  // Presente quando o usuário é um atleta (login do Portal do Jogador).
+  playerId: z.string().uuid().nullable().optional(),
 });
 export type JwtPayload = z.infer<typeof JwtPayloadSchema>;

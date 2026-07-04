@@ -8,12 +8,16 @@ import {
 } from '@reb/contracts';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 import { RankingService } from './ranking.service';
 
+// Backoffice: fechado para o papel PLAYER (o atleta vê /me/ranking no portal).
 @ApiTags('ranking')
 @ApiBearerAuth()
 @Controller('championships')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'ORGANIZER', 'VIEWER')
 export class RankingController {
   constructor(private readonly ranking: RankingService) {}
 

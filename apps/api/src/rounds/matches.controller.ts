@@ -19,10 +19,12 @@ import { RolesGuard } from '../auth/roles.guard';
 import { KnockoutService } from './knockout.service';
 import { MatchesService } from './matches.service';
 
+// Backoffice: fechado para o papel PLAYER (o atleta usa /me/matches no portal).
 @ApiTags('matches')
 @ApiBearerAuth()
 @Controller()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'ORGANIZER', 'VIEWER')
 export class MatchesController {
   constructor(
     private readonly matches: MatchesService,

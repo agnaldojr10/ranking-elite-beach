@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Sem conexão — Meu Beach</title>
+    <style>
+      :root { color-scheme: dark; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: grid; place-items: center; text-align: center;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        color: #ecf7f5; padding: 24px;
+        background:
+          radial-gradient(900px 500px at 20% -10%, rgba(45,212,191,0.16), transparent 60%),
+          linear-gradient(180deg, #091c24, #06141a 40%);
+      }
+      .card { max-width: 340px; }
+      h1 { font-size: 1.4rem; margin: 0 0 8px; }
+      p { color: #a5c2c7; margin: 0 0 20px; }
+      button {
+        height: 44px; padding: 0 24px; border: 0; border-radius: 999px;
+        background: #2dd4bf; color: #03181c; font-weight: 600; font-size: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Você está offline</h1>
+      <p>Sem conexão no momento. Verifique sua internet e tente novamente.</p>
+      <button onclick="location.reload()">Tentar novamente</button>
+    </div>
+  </body>
+</html>

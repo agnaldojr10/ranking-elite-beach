@@ -4,6 +4,20 @@
 
 ---
 
+## [0.18.0] — 2026-07-04 — Fase 12 (fatia 1): Portal do Jogador — Fundação + Home + Perfil (para QA)
+**Descrição:** Início do épico do **Portal do Jogador** — app **imersivo e separado** (`apps/portal`) onde o atleta reivindica a conta por **convite**, faz login e vê **só os seus dados**. Migration `player_portal` gerada/rodada pelo **QA**.
+**Backend (API):**
+- Schema: `User.playerId` vira **FK real** + `@@unique` (um login por atleta); novo model **`PlayerInvite`** (código de uso único, hash SHA-256, expiração).
+- Auth: `playerId` no **JWT**; **`POST /auth/claim`** (reivindica via convite → cria usuário PLAYER + tokens); `UsersService.createAthlete` (transação user + consumo do convite).
+- Convite (admin): **`POST /players/:id/invite`** (ADMIN/ORGANIZER) → retorna o código (em claro só na resposta).
+- **`/me/*`** (`@Roles('PLAYER')`, escopado ao próprio atleta): `profile`, `stats`, `ranking` (posição + variação ▲▼), `matches`, `next-match`.
+- **Gating**: leituras de backoffice (players/stats/ranking/rounds/matches) fechadas para o papel PLAYER — o atleta usa só `/me/*` e `/auth/*`.
+- Testes: `invites` (hash/geração de código) + `auth.claim` (fluxo/erros). **108 testes** (102 + 6).
+**Portal (`apps/portal`, Next 14 standalone):** skin imersiva dark-first (gradientes praianos, tipografia grande), BFF próprio (cookies `reb_p_*`), middleware só-PLAYER. Telas: **/claim** (código+credenciais), **/login**, **Home** (hero do atleta, próximo jogo com **contagem regressiva**, KPIs, posição no ranking), **Perfil** (números completos), **Jogos** (agenda + histórico), boundaries. **PWA dedicado** (manifest/SW/offline/ícones próprios).
+**Deploy:** `apps/portal/Dockerfile` (Next standalone), serviço `portal` (3001) no `docker-compose.prod.yml`, job `docker` do CI builda também a imagem do portal; `.env.example`/`DEPLOY.md` atualizados (`INVITE_TTL_DAYS`, subdomínio próprio).
+**Migration:** `player_portal` (QA). **Contratos:** aditivos (`playerId` no JWT, claim/invite/me).
+**Pendências:** QA do PO. Próximas fatias: Meus Torneios (chave/grupos), H2H, gamificação, push.
+
 ## [0.17.1] — 2026-07-04 — Fase 11 encerrada (Deploy aprovado)
 **Aprovado:** fatia C (Deploy) validada pelo PO. **Fase 11 concluída** (PWA + redesign + hardening + deploy). Projeto publicado em repositório privado; CI verde no `main` (typecheck/lint/testes/build + build das imagens Docker). **Próximo grande passo:** épico **Portal do jogador**.
 

@@ -6,6 +6,7 @@ import {
   UpdatePlayerSchema,
   UpdatePlayerStatusSchema,
   type CreatePlayer,
+  type InviteResponse,
   type JwtPayload,
   type PaginatedPlayers,
   type Player,
@@ -18,14 +19,20 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { InvitesService } from '../invites/invites.service';
 import { PlayersService } from './players.service';
 
+// Backoffice: fechado para o papel PLAYER (o atleta usa apenas /me/* no portal).
 @ApiTags('players')
 @ApiBearerAuth()
 @Controller('players')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'ORGANIZER', 'VIEWER')
 export class PlayersController {
-  constructor(private readonly players: PlayersService) {}
+  constructor(
+    private readonly players: PlayersService,
+    private readonly invites: InvitesService,
+  ) {}
 
   @Get()
   list(
@@ -41,7 +48,6 @@ export class PlayersController {
   }
 
   @Post()
-  @UseGuards(RolesGuard)
   @Roles('ADMIN', 'ORGANIZER')
   create(
     @CurrentUser() user: JwtPayload,
@@ -51,7 +57,6 @@ export class PlayersController {
   }
 
   @Patch(':id')
-  @UseGuards(RolesGuard)
   @Roles('ADMIN', 'ORGANIZER')
   update(
     @CurrentUser() user: JwtPayload,
@@ -62,7 +67,6 @@ export class PlayersController {
   }
 
   @Patch(':id/status')
-  @UseGuards(RolesGuard)
   @Roles('ADMIN', 'ORGANIZER')
   setStatus(
     @CurrentUser() user: JwtPayload,
@@ -70,5 +74,15 @@ export class PlayersController {
     @Body(new ZodValidationPipe(UpdatePlayerStatusSchema)) dto: UpdatePlayerStatus,
   ): Promise<Player> {
     return this.players.setStatus(user.clubId, id, dto.status);
+  }
+
+  /** Gera um convite para o atleta reivindicar sua conta no Portal do Jogador. */
+  @Post(':id/invite')
+  @Roles('ADMIN', 'ORGANIZER')
+  invite(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ): Promise<InviteResponse> {
+    return this.invites.generate(user.clubId, id, user.sub);
   }
 }

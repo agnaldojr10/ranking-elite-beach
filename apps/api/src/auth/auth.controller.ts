@@ -2,9 +2,11 @@ import { Body, Controller, Get, HttpCode, Post, UnauthorizedException, UseGuards
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
+  ClaimRequestSchema,
   LoginRequestSchema,
   RefreshRequestSchema,
   type AuthUser,
+  type ClaimRequest,
   type JwtPayload,
   type LoginRequest,
   type LoginResponse,
@@ -40,6 +42,16 @@ export class AuthController {
     @Body(new ZodValidationPipe(LoginRequestSchema)) dto: LoginRequest,
   ): Promise<LoginResponse> {
     return this.auth.login(dto);
+  }
+
+  @Post('claim')
+  @HttpCode(200)
+  @Throttle({ default: AUTH_THROTTLE })
+  @ApiOperation({ summary: 'Reivindica a conta de atleta via convite (Portal do Jogador)' })
+  claim(
+    @Body(new ZodValidationPipe(ClaimRequestSchema)) dto: ClaimRequest,
+  ): Promise<LoginResponse> {
+    return this.auth.claim(dto);
   }
 
   @Post('refresh')

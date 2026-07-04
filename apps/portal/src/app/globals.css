@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Skin imersiva do Portal do Jogador — dark-first, identidade praiana (oceano). */
+:root {
+  --c-bg: 6 20 26;
+  --c-bg-2: 9 28 36;
+  --c-surface: 15 34 42;
+  --c-surface-2: 20 44 53;
+  --c-ink: 236 247 245;
+  --c-ink-2: 165 194 199;
+  --c-muted: 112 142 150;
+  --c-line: 30 54 62;
+  --c-ocean: 45 212 191;
+  --c-ocean-ink: 3 24 28;
+  --c-coral: 255 138 106;
+  --c-gold: 245 201 90;
+  --c-ok: 52 211 153;
+  --c-warn: 251 191 36;
+  --c-danger: 248 113 113;
+
+  color-scheme: dark;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  color: rgb(var(--c-ink));
+  background-color: rgb(var(--c-bg));
+  /* Gradientes praianos suaves (oceano + coral) sobre fundo profundo. */
+  background-image:
+    radial-gradient(1100px 600px at 15% -10%, rgb(var(--c-ocean) / 0.16), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgb(var(--c-coral) / 0.10), transparent 55%),
+    linear-gradient(180deg, rgb(var(--c-bg-2)), rgb(var(--c-bg)) 40%);
+  background-attachment: fixed;
+  font-family: theme('fontFamily.sans');
+  /* Safe-area (PWA em tela cheia). */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+}
+
+/* Evita zoom automático no iOS em campos < 16px. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+*:focus-visible {
+  outline: 2px solid rgb(var(--c-ocean));
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Números tabulares para placares/stats. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
