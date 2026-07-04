@@ -1,0 +1,35 @@
+# Contexto de build (raiz do monorepo). Mantém pnpm-lock.yaml, package.json,
+# código-fonte, prisma/ e .env.example; remove o que é reconstruído ou sensível.
+
+# Dependências e artefatos de build (reinstalados/reconstruídos na imagem)
+node_modules
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+
+# Segredos e ambiente local (as vars vêm do ambiente em produção)
+.env
+.env.*
+!.env.example
+
+# Git e metadados
+.git
+.gitignore
+.github
+
+# Editores / SO
+.vscode
+.idea
+**/*.log
+.DS_Store
+Thumbs.db
+
+# Docker (evita recursão do próprio contexto)
+**/Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Testes/artefatos não usados em runtime
+coverage
+**/*.tsbuildinfo

@@ -15,7 +15,7 @@ function Submit() {
   return (
     <button
       disabled={pending}
-      className="rounded-md bg-ocean px-4 py-2 font-medium text-white hover:opacity-90 disabled:opacity-60"
+      className="rounded-md bg-ocean px-4 py-2 font-medium text-ocean-ink hover:opacity-90 disabled:opacity-60"
     >
       {pending ? 'Salvando…' : 'Salvar configuração'}
     </button>
@@ -32,7 +32,7 @@ export function ChampionshipConfigForm({
   locked: boolean;
 }) {
   const [state, formAction] = useFormState(action, {} as FormState);
-  const field = 'rounded-md border border-slate-300 px-3 py-2 outline-none focus:border-ocean';
+  const field = 'h-11 rounded-2xl border border-line bg-surface-2 px-3 text-ink outline-none focus:border-ocean';
   const placements = Object.keys(config.scoringTable)
     .map(Number)
     .sort((a, b) => a - b);
@@ -43,7 +43,7 @@ export function ChampionshipConfigForm({
       <input type="hidden" name="locked" value={locked ? '1' : '0'} />
 
       {locked && (
-        <p className="rounded-md bg-amber-100 px-3 py-2 text-sm text-amber-800">
+        <p className="rounded-md bg-warn/15 px-3 py-2 text-sm text-warn">
           Campeonato ativo: pontuação, desempate e final estão bloqueados (BR-05). Você ainda pode
           ajustar os pesos do sorteio e a aleatoriedade.
         </p>
@@ -158,14 +158,14 @@ export function ChampionshipConfigForm({
       </fieldset>
 
       {state?.error && (
-        <p role="alert" className="rounded-md bg-red-100 px-3 py-2 text-sm text-red-700">
+        <p role="alert" className="rounded-md bg-danger/10 px-3 py-2 text-sm text-danger">
           {state.error}
         </p>
       )}
 
       <div className="flex items-center gap-3">
         <Submit />
-        <Link href="../" className="text-sm text-slate-500 hover:underline">
+        <Link href="../" className="text-sm text-ink-2 hover:underline">
           Voltar
         </Link>
       </div>

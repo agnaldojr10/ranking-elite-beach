@@ -6,6 +6,7 @@ export type PlayerListParams = {
   status?: string;
   level?: string;
   page?: string;
+  pageSize?: string;
 };
 
 export async function listPlayers(params: PlayerListParams): Promise<PaginatedPlayers> {
@@ -14,6 +15,7 @@ export async function listPlayers(params: PlayerListParams): Promise<PaginatedPl
   if (params.status) qs.set('status', params.status);
   if (params.level) qs.set('level', params.level);
   if (params.page) qs.set('page', params.page);
+  if (params.pageSize) qs.set('pageSize', params.pageSize);
 
   const res = await apiFetch<PaginatedPlayers>(`/players?${qs.toString()}`);
   if (!res.ok) {

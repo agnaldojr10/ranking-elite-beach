@@ -3,11 +3,23 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: false });
   const config = app.get(ConfigService);
+
+  // Cabeçalhos de segurança. CSP desligado para não quebrar o Swagger (/api/docs);
+  // CORP em cross-origin para permitir o consumo pela app web (BFF).
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+    }),
+  );
+  // Confia no primeiro proxy (deploy) para o rate-limit enxergar o IP real do cliente.
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
 
   app.setGlobalPrefix('api/v1');
   // Validação de entrada é feita com zod (ZodValidationPipe), não com class-validator.

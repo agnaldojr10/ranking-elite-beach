@@ -117,6 +117,8 @@ As explicações são derivadas dos termos de custo que mais pesaram em cada esc
 - Testes com cenários sintéticos: 8/16/32/64 jogadores; históricos densos; pesos extremos; randomness 0/50/100.
 - Propriedade: nunca gerar dupla inválida, todo jogador em exatamente uma dupla, todo grupo round-robin completo.
 
+> **Implementado (Fase 10):** o modo fase final é acionado quando a rodada é `kind=FINAL_PHASE` — `DrawService` força `allowRepeatPartners=true` e peso de parceiro 0, passa históricos vazios e não grava/reverte `PartnerHistory`/`OpponentHistory`. A qualificação usa o ranking do campeonato (`qualifiers_count` melhores jogadores).
+
 ## 10b. Fase final do campeonato (modo especial)
 A fase final usa o **mesmo motor**, mas com config específica (BR-34):
 - Entrada: as `qualifiers_count` melhores duplas/jogadores por **pontuação acumulada** nas rodadas.
@@ -126,6 +128,19 @@ A fase final usa o **mesmo motor**, mas com config específica (BR-34):
 
 ## 10c. Formação de grupos dinâmica
 O agrupamento (Fase 2) respeita a **matriz de formatos** de [FORMATS.md](./FORMATS.md): tamanho preferencial 3 (4 para sobras), nº de grupos e chave de mata-mata derivados do nº de duplas. A classificação intra-rodada (vencedores + melhores 2ºs até fechar potência de 2) é aplicada após os jogos, não pelo motor de sorteio.
+
+## 10d. Implementado (Sprint 5 — fatia motor + simular)
+Pacote `packages/sort-engine` (TS puro, determinístico) entregue para QA:
+- **PRNG:** `mulberry32` + `hashSeed` (FNV-1a) → mesma seed reproduz o resultado (`prng.ts`).
+- **Fase 1 (`pairing.ts`):** custo `w.partner·penalidade − w.ranking·complementaridade − w.skill·complementoNível`; **greedy** por menor custo + **2-opt**. `allowRepeatPartners=false` ⇒ custo proibitivo (1000) com **fallback** à menor repetição (BR-18).
+- **Fase 2 (`grouping.ts`):** tamanhos via `partitionGroups` (FORMATS.md); distribuição greedy pelo grupo mais leve (equilíbrio de força); quando `allowRepeatOpponents=false`, passes de troca que reduzem confrontos repetidos.
+- **Fase 3 (`round-robin.ts`):** todos contra todos por grupo (BR-22).
+- **Score/métricas (`metrics.ts`):** `repeatedPartners`, `repeatedOpponents`, `groupBalance`, `avgRankingDiff`, `partnerDiversity`; `qualityScore` 0–100 (BR-21).
+- **Explicações (`explain.ts`):** frases derivadas dos termos dominantes (BR-19/21).
+- **Orquestrador (`draw.ts`):** `runDraw(input)`; `randomness` 0 = aleatório pela seed, 100 = melhor de N reinícios com ruído (sempre retorna o melhor avaliado — §7). Valida par/[8,64] (`DrawError`).
+- **API:** `POST /rounds/:id/draw/simulate` (não persiste — BR-19); **enforcement** `409 ODD_PLAYER_COUNT` / `422 PLAYER_COUNT_OUT_OF_RANGE`. **Web:** tela de simulação com score, métricas, duplas, grupos/jogos e explicações; botão "Regenerar".
+- **Nota (proxy de ranking):** `RANKING_ENTRY` só existe na Sprint 7; até lá a força vem do `skillLevel` (`SKILL_STRENGTH`: BEGINNER 25 · INTERMEDIATE 50 · ADVANCED 75 · PRO 100). Trocar por ranking real quando existir.
+- **Confirmar sorteio (Sprint 5 — fatia 2, implementado):** `POST /rounds/:id/draw/confirm` re-executa `runDraw` com a mesma seed+config exibida e **persiste** Draw/Team/TeamPlayer/Group/GroupTeam/Match numa transação, seta a rodada como `DRAWN` e **incrementa** `PartnerHistory`/`OpponentHistory` (BR-20). `GET /rounds/:id/draw` retorna o sorteio gravado; `DELETE` (descartar) apaga o sorteio, **reverte** o histórico e reabre a rodada. Nova confirmação é bloqueada (409 `DRAW_EXISTS`) até descartar. O `simulate` **agora carrega o histórico real** do banco — o motor efetivamente evita repetir parceiros/adversários ao longo da temporada (BR-13/14). Lógica de deltas em `apps/api/src/rounds/history.service.ts` (com testes puros).
 
 ## 11. Regras futuras (extensível)
 O motor recebe regras como **estratégias plugáveis** (padrão Strategy). Roadmap de novas regras:

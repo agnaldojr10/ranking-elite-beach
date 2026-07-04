@@ -58,20 +58,20 @@
 - **BR-29** **Ordem de desempate:** (1) pontos → (2) saldo de games → (3) confronto direto → (4) menor repetição/sorteio. A ordem é configurável, mas este é o padrão.
 
 ## 8. Pontuação e ranking
-- **BR-30** Pontos por colocação vêm de `scoring_table` (JSONB). **Nunca** valores fixos no código. A pontuação é atribuída pela **colocação final da dupla na rodada** (após grupos + mata-mata).
-- **BR-31** Ranking do jogador acumula pontos das rodadas; recortes: geral, por temporada, histórico.
-- **BR-32** Aproveitamento = vitórias / (vitórias + derrotas), excluindo W.O. por lesão (BR-27).
-- **BR-33** Posição no ranking usa os critérios de desempate de BR-29 quando há empate em pontos.
+- **BR-30** ✅ Pontos por colocação vêm de `scoring_table` (JSONB). **Nunca** valores fixos no código. A pontuação é atribuída pela **colocação final da dupla na rodada** (após grupos + mata-mata). *(Sprint 6)*
+- **BR-31** ✅ Ranking do jogador acumula pontos das rodadas; recortes: geral, por temporada, histórico. *(Sprint 7 — computado sob demanda)*
+- **BR-32** ✅ Aproveitamento = vitórias / (vitórias + derrotas), excluindo W.O. por lesão (BR-27). *(Sprint 7)*
+- **BR-33** ✅ Posição no ranking usa os critérios de desempate de BR-29 quando há empate em pontos (pontos → saldo de games → aproveitamento). *(Sprint 7)*
 
 ## 9. Fase final do campeonato
-- **BR-34** A fase final ocorre **após a última rodada** e é composta pelas **melhores duplas/jogadores por pontuação acumulada** ao longo das rodadas (`qualifiers_count`).
+- **BR-34** ✅ A fase final ocorre **após a última rodada** e é composta pelas **melhores duplas/jogadores por pontuação acumulada** ao longo das rodadas (`qualifiers_count`). *(Fase 10 — rodada `FINAL_PHASE`; novo sorteio ignora histórico de parceiros; ranking exclui a final.)*
   - **Novo sorteio das duplas** é gerado para a final e, aqui, o **histórico de parceiros é desconsiderado** (pode repetir parceiro que já jogou junto).
   - Formato: **fase de grupos seguida de mata-mata**, conforme `final_config`.
   - A classificação para a final usa a pontuação acumulada; empate resolvido por BR-29.
 
 ## 10. Estatísticas
-- **BR-35** Estatísticas por jogador conforme RF-27 são derivadas do histórico de jogos/duplas.
-- **BR-36** **"Parceiro favorito" = maior nº de vezes juntos** (métrica objetiva, sempre exibida). A métrica de **"melhor parceiro" por taxa de vitória fica adiada** — como as duplas rotacionam a cada rodada (forte joga com fraco etc.), a taxa de vitória isolada não é justa agora. Quando implementada, exigirá amostra mínima e normalização. Ver [BACKLOG.md](./BACKLOG.md).
+- **BR-35** ✅ Estatísticas por jogador conforme RF-27 são derivadas do histórico de jogos/duplas. *(Sprint 8 — computado sob demanda)*
+- **BR-36** ✅ **"Parceiro favorito" = maior nº de vezes juntos** (métrica objetiva, sempre exibida). A métrica de **"melhor parceiro" por taxa de vitória fica adiada** — como as duplas rotacionam a cada rodada (forte joga com fraco etc.), a taxa de vitória isolada não é justa agora. Quando implementada, exigirá amostra mínima e normalização. Ver [BACKLOG.md](./BACKLOG.md).
 
 ## 11. Perfis e acesso
 - **BR-37** ADMIN: tudo. ORGANIZER: gerencia campeonatos/rodadas/resultados. PLAYER: vê seus dados e se inscreve. VIEWER: leitura pública.

@@ -10,6 +10,10 @@ const EnvSchema = z.object({
   JWT_ACCESS_TTL: z.coerce.number().default(900),
   JWT_REFRESH_TTL: z.coerce.number().default(604800),
   WEB_ORIGIN: z.string().default('http://localhost:3000'),
+  // Rate-limit (anti brute-force). Janela em segundos; limites por IP.
+  THROTTLE_TTL: z.coerce.number().default(60),
+  THROTTLE_LIMIT: z.coerce.number().default(120),
+  AUTH_THROTTLE_LIMIT: z.coerce.number().default(10),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

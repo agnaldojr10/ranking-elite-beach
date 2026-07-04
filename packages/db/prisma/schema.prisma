@@ -47,15 +47,63 @@ enum ChampionshipStatus {
   FINISHED
 }
 
+/// Ciclo de vida da rodada. Sprint 4 usa SCHEDULED/OPEN; DRAWN em diante entra com o sorteio (Sprint 5).
+enum RoundStatus {
+  SCHEDULED
+  OPEN
+  DRAWN
+  IN_PROGRESS
+  FINISHED
+}
+
+/// Distingue rodada regular da fase final; na FINAL_PHASE o sorteio ignora histórico (BR-34).
+enum RoundKind {
+  REGULAR
+  FINAL_PHASE
+}
+
+/// Situação da inscrição de um jogador numa rodada (BR-09). Lista de espera é promovida manualmente (BR-10).
+enum RegistrationStatus {
+  CONFIRMED
+  PENDING
+  ABSENT
+  WAITLIST
+}
+
+/// Situação de um jogo. Resultado (PLAYED/WALKOVER) entra na Sprint 6.
+enum MatchStatus {
+  PENDING
+  PLAYED
+  WALKOVER
+}
+
+/// Fase do jogo: rodízio de grupo ou mata-mata intra-rodada.
+enum MatchPhase {
+  GROUP
+  KNOCKOUT
+}
+
+/// Tipo de item da agenda. ROUND/FINAL são derivados das rodadas; EVENT/TRAINING são manuais.
+enum CalendarEventType {
+  ROUND
+  FINAL
+  EVENT
+  TRAINING
+}
+
 /// Raiz de tenancy. No MVP existe um único clube semeado.
 model Club {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
   createdAt DateTime @default(now()) @map("created_at")
 
-  users   User[]
-  players Player[]
-  seasons Season[]
+  users             User[]
+  players           Player[]
+  seasons           Season[]
+  partnerHistories  PartnerHistory[]
+  opponentHistories OpponentHistory[]
+  venues            Venue[]
+  calendarEvents    CalendarEvent[]
 
   @@map("club")
 }
@@ -72,7 +120,10 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  club            Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  draws           Draw[]
+  matchUpdates    Match[]          @relation("MatchUpdatedBy")
+  matchResultLogs MatchResultLog[]
 
   @@index([clubId])
   @@map("app_user")
@@ -91,7 +142,10 @@ model Player {
   createdAt  DateTime     @default(now()) @map("created_at")
   updatedAt  DateTime     @updatedAt @map("updated_at")
 
-  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  club          Club           @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  registrations Registration[] @relation("PlayerRegistrations")
+  substitutions Registration[] @relation("PlayerSubstitutions")
+  teamPlayers   TeamPlayer[]   @relation("PlayerTeams")
 
   @@index([clubId, status])
   @@index([clubId, name])
@@ -129,6 +183,7 @@ model Championship {
 
   season Season              @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   config ChampionshipConfig?
+  rounds Round[]
 
   @@index([seasonId])
   @@map("championship")
@@ -148,4 +203,260 @@ model ChampionshipConfig {
   championship Championship @relation(fields: [championshipId], references: [id], onDelete: Cascade)
 
   @@map("championship_config")
+}
+
+/// Rodada de um campeonato. Nº único por campeonato; formato de partida e preferência de grupo por rodada.
+model Round {
+  id             String      @id @default(uuid()) @db.Uuid
+  championshipId String      @map("championship_id") @db.Uuid
+  number         Int
+  date           DateTime?   @db.Date
+  status         RoundStatus @default(SCHEDULED)
+  kind           RoundKind   @default(REGULAR)
+  matchFormat    Json        @map("match_format")
+  groupSizePref  Int         @default(3) @map("group_size_pref")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  championship    Championship   @relation(fields: [championshipId], references: [id], onDelete: Cascade)
+  registrations   Registration[]
+  draw            Draw?
+  teams           Team[]
+  groups          Group[]
+  knockoutMatches Match[]        @relation("RoundKnockout")
+  results         RoundResult[]
+
+  @@unique([championshipId, number])
+  @@index([championshipId])
+  @@map("round")
+}
+
+/// Inscrição de um jogador numa rodada. Única por (rodada, jogador). substitutedBy registra troca (BR-10/BR-27).
+model Registration {
+  id              String             @id @default(uuid()) @db.Uuid
+  roundId         String             @map("round_id") @db.Uuid
+  playerId        String             @map("player_id") @db.Uuid
+  status          RegistrationStatus @default(CONFIRMED)
+  substitutedById String?            @map("substituted_by") @db.Uuid
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  round         Round   @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  player        Player  @relation("PlayerRegistrations", fields: [playerId], references: [id])
+  substitutedBy Player? @relation("PlayerSubstitutions", fields: [substitutedById], references: [id])
+
+  @@unique([roundId, playerId])
+  @@index([roundId, status])
+  @@map("registration")
+}
+
+/// Snapshot auditável de um sorteio confirmado de uma rodada (BR-20). Um por rodada.
+model Draw {
+  id             String   @id @default(uuid()) @db.Uuid
+  roundId        String   @unique @map("round_id") @db.Uuid
+  seed           String
+  configSnapshot Json     @map("config_snapshot")
+  qualityScore   Float    @map("quality_score")
+  metrics        Json
+  explanations   Json
+  createdById    String   @map("created_by") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  round     Round   @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  createdBy User    @relation(fields: [createdById], references: [id])
+  teams     Team[]
+  groups    Group[]
+
+  @@map("draw")
+}
+
+/// Dupla formada no sorteio. Sempre com exatamente 2 jogadores (TeamPlayer).
+model Team {
+  id       String @id @default(uuid()) @db.Uuid
+  roundId  String @map("round_id") @db.Uuid
+  drawId   String @map("draw_id") @db.Uuid
+  label    String
+  strength Int
+
+  round        Round         @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  draw         Draw          @relation(fields: [drawId], references: [id], onDelete: Cascade)
+  players      TeamPlayer[]
+  groupTeams   GroupTeam[]
+  matchesA     Match[]       @relation("MatchTeamA")
+  matchesB     Match[]       @relation("MatchTeamB")
+  roundResults RoundResult[]
+
+  @@index([drawId])
+  @@map("team")
+}
+
+/// Jogador de uma dupla (PK composta). Exatamente 2 por Team.
+model TeamPlayer {
+  teamId   String @map("team_id") @db.Uuid
+  playerId String @map("player_id") @db.Uuid
+
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player Player @relation("PlayerTeams", fields: [playerId], references: [id])
+
+  @@id([teamId, playerId])
+  @@index([playerId])
+  @@map("team_player")
+}
+
+/// Grupo da rodada (round-robin interno).
+model Group {
+  id      String @id @default(uuid()) @db.Uuid
+  roundId String @map("round_id") @db.Uuid
+  drawId  String @map("draw_id") @db.Uuid
+  name    String
+
+  round   Round       @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  draw    Draw        @relation(fields: [drawId], references: [id], onDelete: Cascade)
+  teams   GroupTeam[]
+  matches Match[]
+
+  @@index([drawId])
+  @@map("group")
+}
+
+/// Dupla alocada a um grupo (PK composta).
+model GroupTeam {
+  groupId String @map("group_id") @db.Uuid
+  teamId  String @map("team_id") @db.Uuid
+  seed    Int
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  team  Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, teamId])
+  @@map("group_team")
+}
+
+/// Jogo entre duas duplas (fase de grupos ou mata-mata). Resultado registrado na Sprint 6.
+model Match {
+  id             String      @id @default(uuid()) @db.Uuid
+  phase          MatchPhase  @default(GROUP)
+  groupId        String?     @map("group_id") @db.Uuid
+  roundId        String?     @map("round_id") @db.Uuid
+  stage          String?
+  slot           Int?
+  teamAId        String      @map("team_a_id") @db.Uuid
+  teamBId        String      @map("team_b_id") @db.Uuid
+  venueId        String?     @map("venue_id") @db.Uuid
+  scheduledAt    DateTime?   @map("scheduled_at")
+  sets           Json?
+  winnerTeamId   String?     @map("winner_team_id") @db.Uuid
+  status         MatchStatus @default(PENDING)
+  isWalkover     Boolean     @default(false) @map("is_walkover")
+  walkoverInjury Boolean     @default(false) @map("walkover_injury")
+  updatedById    String?     @map("updated_by") @db.Uuid
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @default(now()) @updatedAt @map("updated_at")
+
+  group      Group?           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  round      Round?           @relation("RoundKnockout", fields: [roundId], references: [id], onDelete: Cascade)
+  teamA      Team             @relation("MatchTeamA", fields: [teamAId], references: [id])
+  teamB      Team             @relation("MatchTeamB", fields: [teamBId], references: [id])
+  venue      Venue?           @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  updatedBy  User?            @relation("MatchUpdatedBy", fields: [updatedById], references: [id])
+  resultLogs MatchResultLog[]
+
+  @@index([groupId, status])
+  @@index([roundId, phase])
+  @@map("match")
+}
+
+/// Colocação final de uma dupla na rodada e pontos atribuídos (BR-30). Alimenta o ranking.
+model RoundResult {
+  id            String   @id @default(uuid()) @db.Uuid
+  roundId       String   @map("round_id") @db.Uuid
+  teamId        String   @map("team_id") @db.Uuid
+  finalPosition Int      @map("final_position")
+  pointsAwarded Int      @map("points_awarded")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  round Round @relation(fields: [roundId], references: [id], onDelete: Cascade)
+  team  Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([roundId, teamId])
+  @@map("round_result")
+}
+
+/// Auditoria de alterações de resultado de um jogo (BR-25/27; BACKLOG auditoria).
+model MatchResultLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  matchId     String   @map("match_id") @db.Uuid
+  changedById String   @map("changed_by") @db.Uuid
+  before      Json?
+  after       Json?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  match     Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  changedBy User  @relation(fields: [changedById], references: [id])
+
+  @@index([matchId])
+  @@map("match_result_log")
+}
+
+/// Contador de vezes que dois jogadores foram parceiros (par normalizado a<b). Alimenta o sorteio (BR-14).
+model PartnerHistory {
+  id            String  @id @default(uuid()) @db.Uuid
+  clubId        String  @map("club_id") @db.Uuid
+  playerAId     String  @map("player_a_id") @db.Uuid
+  playerBId     String  @map("player_b_id") @db.Uuid
+  timesTogether Int     @default(0) @map("times_together")
+  lastRoundId   String? @map("last_round_id") @db.Uuid
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, playerAId, playerBId])
+  @@map("partner_history")
+}
+
+/// Contador de vezes que dois jogadores se enfrentaram (par normalizado a<b).
+model OpponentHistory {
+  id          String  @id @default(uuid()) @db.Uuid
+  clubId      String  @map("club_id") @db.Uuid
+  playerAId   String  @map("player_a_id") @db.Uuid
+  playerBId   String  @map("player_b_id") @db.Uuid
+  timesFaced  Int     @default(0) @map("times_faced")
+  lastRoundId String? @map("last_round_id") @db.Uuid
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, playerAId, playerBId])
+  @@map("opponent_history")
+}
+
+/// Quadra do clube (RF-29). availability guarda janelas por dia da semana (JSONB).
+model Venue {
+  id           String   @id @default(uuid()) @db.Uuid
+  clubId       String   @map("club_id") @db.Uuid
+  name         String
+  number       Int?
+  location     String?
+  availability Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  club    Club    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  matches Match[]
+
+  @@index([clubId])
+  @@map("venue")
+}
+
+/// Item manual da agenda (RF-30). Rodadas/finais são derivadas das rodadas; aqui ficam eventos/treinos.
+model CalendarEvent {
+  id        String            @id @default(uuid()) @db.Uuid
+  clubId    String            @map("club_id") @db.Uuid
+  type      CalendarEventType
+  title     String
+  date      DateTime          @db.Date
+  refId     String?           @map("ref_id") @db.Uuid
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@index([clubId, date])
+  @@map("calendar_event")
 }

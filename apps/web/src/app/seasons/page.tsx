@@ -8,29 +8,29 @@ export default async function SeasonsPage() {
   const seasons = await listSeasons();
 
   return (
-    <main className="min-h-screen">
-      <header className="flex items-center gap-4 border-b border-slate-200 bg-white px-6 py-4">
+    <main className="min-h-dvh">
+      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 sticky top-0 z-40 border-b border-line bg-surface/80 px-6 py-4 backdrop-blur-md">
         <Link href="/dashboard" className="font-bold text-ocean">
           Ranking Elite Beach
         </Link>
-        <span className="text-slate-400">/</span>
+        <span className="text-muted">/</span>
         <span className="font-medium">Temporadas</span>
       </header>
 
       <section className="p-6">
-        <div className="mb-6 rounded-lg border border-slate-200 bg-white p-4">
+        <div className="mb-6 rounded-3xl border border-line bg-surface p-4 shadow-tile">
           <h2 className="mb-3 font-semibold">Nova temporada</h2>
           <SeasonCreateForm />
         </div>
 
         {seasons.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-slate-300 p-10 text-center text-slate-500">
+          <div className="rounded-3xl border border-dashed border-line p-10 text-center text-ink-2">
             Nenhuma temporada ainda. Crie a primeira acima.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+          <div className="overflow-x-auto rounded-3xl border border-line bg-surface shadow-tile">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-slate-500">
+              <thead className="bg-surface-2 text-left text-ink-2">
                 <tr>
                   <th className="px-4 py-3">Ano</th>
                   <th className="px-4 py-3">Nome</th>
@@ -44,7 +44,7 @@ export default async function SeasonsPage() {
                   const nextStatus = s.status === 'OPEN' ? 'CLOSED' : 'OPEN';
                   const toggle = setSeasonStatusAction.bind(null, s.id, nextStatus);
                   return (
-                    <tr key={s.id} className="border-t border-slate-100">
+                    <tr key={s.id} className="border-t border-line">
                       <td className="px-4 py-3 font-medium">{s.year}</td>
                       <td className="px-4 py-3">{s.name}</td>
                       <td className="px-4 py-3">
@@ -58,7 +58,7 @@ export default async function SeasonsPage() {
                       <td className="px-4 py-3">{SEASON_STATUS_LABELS[s.status]}</td>
                       <td className="px-4 py-3 text-right">
                         <form action={toggle} className="inline">
-                          <button className="rounded-md border border-slate-300 px-3 py-1 text-xs hover:bg-slate-100">
+                          <button className="rounded-full border border-line px-3 py-1 text-xs transition hover:bg-surface-2">
                             {s.status === 'OPEN' ? 'Encerrar' : 'Reabrir'}
                           </button>
                         </form>

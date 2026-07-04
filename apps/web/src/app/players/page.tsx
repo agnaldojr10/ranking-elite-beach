@@ -13,7 +13,7 @@ type SearchParams = { q?: string; status?: string; level?: string; page?: string
 export default async function PlayersPage({ searchParams }: { searchParams: SearchParams }) {
   const result = await listPlayers(searchParams);
   const totalPages = Math.max(1, Math.ceil(result.total / result.pageSize));
-  const field = 'rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-ocean';
+  const field = 'h-11 rounded-2xl border border-line bg-surface-2 px-3 text-sm text-ink outline-none focus:border-ocean';
 
   const pageLink = (page: number) => {
     const qs = new URLSearchParams();
@@ -25,18 +25,18 @@ export default async function PlayersPage({ searchParams }: { searchParams: Sear
   };
 
   return (
-    <main className="min-h-screen">
-      <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4">
+    <main className="min-h-dvh">
+      <header className="flex items-center justify-between sticky top-0 z-40 border-b border-line bg-surface/80 px-6 py-4 backdrop-blur-md">
         <div className="flex items-center gap-4">
           <Link href="/dashboard" className="font-bold text-ocean">
             Ranking Elite Beach
           </Link>
-          <span className="text-slate-400">/</span>
+          <span className="text-muted">/</span>
           <span className="font-medium">Jogadores</span>
         </div>
         <Link
           href="/players/new"
-          className="rounded-md bg-ocean px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          className="rounded-full bg-ocean px-5 py-2.5 text-sm font-medium text-ocean-ink transition hover:opacity-90"
         >
           + Novo jogador
         </Link>
@@ -66,13 +66,13 @@ export default async function PlayersPage({ searchParams }: { searchParams: Sear
               </option>
             ))}
           </select>
-          <button className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-100">
+          <button className="rounded-full border border-line px-4 py-2 text-sm transition hover:bg-surface-2">
             Filtrar
           </button>
         </form>
 
         {result.data.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-slate-300 p-10 text-center text-slate-500">
+          <div className="rounded-3xl border border-dashed border-line p-10 text-center text-ink-2">
             Nenhum jogador encontrado.{' '}
             <Link href="/players/new" className="text-ocean hover:underline">
               Cadastrar o primeiro
@@ -80,9 +80,9 @@ export default async function PlayersPage({ searchParams }: { searchParams: Sear
             .
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+          <div className="overflow-x-auto rounded-3xl border border-line bg-surface shadow-tile">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-slate-500">
+              <thead className="bg-surface-2 text-left text-ink-2">
                 <tr>
                   <th className="px-4 py-3">Jogador</th>
                   <th className="px-4 py-3">Idade</th>
@@ -92,11 +92,11 @@ export default async function PlayersPage({ searchParams }: { searchParams: Sear
               </thead>
               <tbody>
                 {result.data.map((p) => (
-                  <tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50">
+                  <tr key={p.id} className="border-t border-line hover:bg-surface-2">
                     <td className="px-4 py-3">
                       <Link href={`/players/${p.id}`} className="flex items-center gap-3">
                         <Avatar name={p.name} photoUrl={p.photoUrl} size={36} />
-                        <span className="font-medium text-slate-800">{p.name}</span>
+                        <span className="font-medium text-ink">{p.name}</span>
                       </Link>
                     </td>
                     <td className="px-4 py-3">{p.age}</td>
@@ -105,8 +105,8 @@ export default async function PlayersPage({ searchParams }: { searchParams: Sear
                       <span
                         className={
                           p.status === 'ACTIVE'
-                            ? 'rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-700'
-                            : 'rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-600'
+                            ? 'rounded-full bg-ok/15 px-2 py-0.5 text-xs text-ok'
+                            : 'rounded-full bg-surface-2 px-2 py-0.5 text-xs text-ink-2'
                         }
                       >
                         {PLAYER_STATUS_LABELS[p.status]}
@@ -119,18 +119,18 @@ export default async function PlayersPage({ searchParams }: { searchParams: Sear
           </div>
         )}
 
-        <div className="mt-4 flex items-center justify-between text-sm text-slate-500">
+        <div className="mt-4 flex items-center justify-between text-sm text-ink-2">
           <span>
             {result.total} jogador(es) · página {result.page} de {totalPages}
           </span>
           <div className="flex gap-2">
             {result.page > 1 && (
-              <Link href={pageLink(result.page - 1)} className="rounded-md border px-3 py-1 hover:bg-slate-100">
+              <Link href={pageLink(result.page - 1)} className="rounded-full border border-line px-3 py-1 transition hover:bg-surface-2">
                 Anterior
               </Link>
             )}
             {result.page < totalPages && (
-              <Link href={pageLink(result.page + 1)} className="rounded-md border px-3 py-1 hover:bg-slate-100">
+              <Link href={pageLink(result.page + 1)} className="rounded-full border border-line px-3 py-1 transition hover:bg-surface-2">
                 Próxima
               </Link>
             )}
