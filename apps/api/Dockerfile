@@ -27,8 +27,10 @@ RUN cp .env.example .env
 
 RUN pnpm install --frozen-lockfile
 
-# Ordem de build: contracts -> db (prisma generate + tsc) -> api.
+# Ordem de build: contracts -> sort-engine -> db (prisma generate + tsc) -> api.
+# (a API importa @reb/sort-engine, cujo entry é dist/ e precisa ser compilado.)
 RUN pnpm --filter @reb/contracts build \
+  && pnpm --filter @reb/sort-engine build \
   && pnpm --filter @reb/db build \
   && pnpm --filter @reb/api build
 
