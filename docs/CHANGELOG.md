@@ -4,6 +4,9 @@
 
 ---
 
+## [0.20.1] — 2026-07-05 — Fase 12 concluída (Portal do Jogador completo)
+**Aprovado:** fatia 3 (Push) validada pelo PO. As 3 fatias do Portal do Jogador estão no `main` → **épico e Fase 12 encerrados**. Épico entregue: fundação/auth por convite, Home, Perfil, Meus Torneios, H2H, Conquistas e Notificações push.
+
 ## [0.20.0] — 2026-07-05 — Fase 12 (fatia 3): Portal — Notificações Push (para QA) — encerra o épico
 **Descrição:** Web Push no Portal do Jogador. **121 testes** (115 + 6). Migration `push_subscriptions` (nova tabela + `match.start_notified_at`).
 **Backend (API):**
