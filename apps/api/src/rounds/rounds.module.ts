@@ -19,5 +19,6 @@ import { RoundsService } from './rounds.service';
     MatchesService,
     KnockoutService,
   ],
+  exports: [RoundsService, MatchesService, KnockoutService],
 })
 export class RoundsModule {}

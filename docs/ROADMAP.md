@@ -21,7 +21,7 @@
 | 9 | Quadras e Agenda | ✔ Concluído e aprovado | Fase 6 |
 | 10 | Fase Final (chaveamento) | ✔ Concluído e aprovado | Fase 7 |
 | 11 | Polimento, PWA, hardening, deploy | ✔ Concluído e aprovado — PWA + redesign UI + hardening + deploy (Docker/Neon + CI) | Fases 1–10 |
-| 12 | **Portal do jogador** (app imersivo do atleta) | ▶ Em andamento — fatia 1 (Fundação + Home + Perfil, via convite) p/ QA; faltam Meus Torneios, H2H, gamificação, push | Fase 11 |
+| 12 | **Portal do jogador** (app imersivo do atleta) | ▶ Em andamento — fatia 1 ✔ aprovada; fatia 2 (Meus Torneios + H2H + Conquistas) p/ QA; falta Push (PWA) | Fase 11 |
 
 ## Ordem recomendada de implementação
 Fundação → dados de base (jogadores/campeonatos/rodadas) → **sorteio** → jogos/resultados → ranking/stats → periféricos (quadras/agenda/final) → polimento. O sorteio vem cedo (Fase 5) por ser o maior risco/diferencial, mas depende de ter jogadores e rodadas para operar.

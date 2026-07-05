@@ -4,6 +4,18 @@
 
 ---
 
+## [0.19.0] — 2026-07-05 — Fase 12 (fatia 2): Portal — Meus Torneios + H2H + Conquistas (para QA)
+**Descrição:** Amplia o Portal do Jogador com os módulos de acompanhamento. **Sem migration** e sem novos modelos (tudo derivado de dados existentes). **115 testes** (108 + 7).
+**Backend (API):**
+- Novos `/me/*` (`@Roles('PLAYER')`, escopados): `GET /me/tournaments` (campeonatos que jogo + colocação/campeão), `GET /me/tournaments/:championshipId` (minhas rodadas: meu grupo+classificação, minha chave, minha colocação), `GET /me/opponents`, `GET /me/h2h/:opponentId` (V/D + últimos jogos, BR-32), `GET /me/achievements` (conquistas derivadas de `PlayerStats`).
+- `MeService` reusa `MatchesService`/`KnockoutService`/`RankingService`/`StatsService` (exportados agora em `RoundsModule`); helpers puros testáveis `buildAchievements` e `tallyH2H`.
+- Correção: rótulo da rodada em jogos de fase de grupos (rodada via `group.round`) — antes caía em "Mata-mata".
+**Portal (`apps/portal`):**
+- Nav com **Torneios**; telas `/torneios` (lista) e `/torneios/[id]` (detalhe), `/h2h` (rivais) e `/h2h/[id]` (retrospecto); **Conquistas** no Perfil (grade de medalhas por tier) + atalho "Rivais".
+- Primitivos: `AchievementBadge`, `StandingsMini`, `H2HBar`, `MatchRow` (extraído/reutilizado).
+**Migration:** nenhuma. **Contratos:** aditivos. **Smoke:** claim → `/me/tournaments|/tournaments/:id|/opponents|/h2h/:id|/achievements` → 200 com dados reais; PLAYER em backoffice → 403.
+**Pendências:** QA do PO. Próxima e última fatia do épico: **Push (PWA)**.
+
 ## [0.18.0] — 2026-07-04 — Fase 12 (fatia 1): Portal do Jogador — Fundação + Home + Perfil (para QA)
 **Descrição:** Início do épico do **Portal do Jogador** — app **imersivo e separado** (`apps/portal`) onde o atleta reivindica a conta por **convite**, faz login e vê **só os seus dados**. Migration `player_portal` gerada/rodada pelo **QA**.
 **Backend (API):**

@@ -35,6 +35,11 @@ Fluxo por **convite**: a organização gera um código para um `Player`; o atlet
 | GET | `/me/ranking` | PLAYER | posição no campeonato ativo + variação (▲▼) |
 | GET | `/me/matches` | PLAYER | todos os jogos do atleta (do ponto de vista dele) |
 | GET | `/me/next-match` | PLAYER | próximo jogo (agendado mais próximo) |
+| GET | `/me/tournaments` | PLAYER | campeonatos que participo (colocação, pontos, campeão) |
+| GET | `/me/tournaments/:championshipId` | PLAYER | detalhe: minhas rodadas (meu grupo+classificação, minha chave, colocação) — `404 TOURNAMENT_NOT_FOUND` se não participo |
+| GET | `/me/opponents` | PLAYER | adversários que já enfrentei (por nº de confrontos) |
+| GET | `/me/h2h/:opponentId` | PLAYER | retrospecto direto (V/D + últimos jogos) |
+| GET | `/me/achievements` | PLAYER | conquistas derivadas dos meus números |
 
 Erros do convite: `INVALID_INVITE` (404/401), `INVITE_USED` (409), `INVITE_EXPIRED` (409), `EMAIL_EXISTS` (409), `PLAYER_ALREADY_CLAIMED` (409). As leituras de backoffice (`/players/:id/stats`, `/championships/:id/ranking`, `/rounds/*`, etc.) são **fechadas ao papel PLAYER** — o atleta usa apenas `/me/*`.
 

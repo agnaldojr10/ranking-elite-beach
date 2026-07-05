@@ -1,8 +1,13 @@
-import { Controller, ForbiddenException, Get, UseGuards } from '@nestjs/common';
+import { Controller, ForbiddenException, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type {
   JwtPayload,
+  MeAchievement,
+  MeH2H,
+  MeOpponentSummary,
   MeRanking,
+  MeTournamentDetail,
+  MeTournamentSummary,
   Player,
   PlayerMatch,
   PlayerStats,
@@ -45,6 +50,37 @@ export class MeController {
   @Get('next-match')
   nextMatch(@CurrentUser() user: JwtPayload): Promise<PlayerMatch | null> {
     return this.me.getNextMatch(user.clubId, this.playerId(user));
+  }
+
+  @Get('tournaments')
+  tournaments(@CurrentUser() user: JwtPayload): Promise<MeTournamentSummary[]> {
+    return this.me.getTournaments(user.clubId, this.playerId(user));
+  }
+
+  @Get('tournaments/:championshipId')
+  tournament(
+    @CurrentUser() user: JwtPayload,
+    @Param('championshipId') championshipId: string,
+  ): Promise<MeTournamentDetail> {
+    return this.me.getTournament(user.clubId, this.playerId(user), championshipId);
+  }
+
+  @Get('opponents')
+  opponents(@CurrentUser() user: JwtPayload): Promise<MeOpponentSummary[]> {
+    return this.me.getOpponents(user.clubId, this.playerId(user));
+  }
+
+  @Get('h2h/:opponentId')
+  h2h(
+    @CurrentUser() user: JwtPayload,
+    @Param('opponentId') opponentId: string,
+  ): Promise<MeH2H> {
+    return this.me.getH2H(user.clubId, this.playerId(user), opponentId);
+  }
+
+  @Get('achievements')
+  achievements(@CurrentUser() user: JwtPayload): Promise<MeAchievement[]> {
+    return this.me.getAchievements(user.clubId, this.playerId(user));
   }
 
   /** Garante que o usuário autenticado está vinculado a um atleta. */

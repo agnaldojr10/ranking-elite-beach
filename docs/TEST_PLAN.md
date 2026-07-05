@@ -292,6 +292,20 @@
 
 **Critérios de aceite:** QA-PP1 a QA-PP8 verdes. Fatia 1 do épico concluída após aprovação.
 
+### Roteiro de QA — Fase 12 (fatia 2 — Meus Torneios + H2H + Conquistas)
+
+> Pré: **sem migration**. Portal (:3001) + API/web no ar. Logar como atleta (via convite/claim). Use um atleta com histórico (ex.: participante do campeonato "teste").
+
+- **QA-PP9 (lista de torneios):** aba **Torneios** lista os campeonatos que o atleta joga, com posição/pontos/rodadas; selo **Campeão** quando venceu a fase final.
+- **QA-PP10 (detalhe do torneio):** abrir um torneio → por rodada aparece **meu grupo** (mini-classificação com **minha dupla destacada**), **minha chave** (só meus confrontos) e **minha colocação/pontos**; posição no cabeçalho coerente com o ranking.
+- **QA-PP11 (H2H):** Perfil → **Rivais** (ou "Maior rival") → lista de adversários → detalhe mostra **V×D** e os últimos confrontos com placar corretos do meu ponto de vista.
+- **QA-PP12 (Conquistas):** Perfil mostra a grade de **medalhas**; as conquistadas ficam coloridas (tier), as demais esmaecidas; valores coerentes (títulos, sequência, etc.).
+- **QA-PP13 (rótulos):** jogos de fase de grupos mostram "Rodada N" (não "Mata-mata"); mata-mata mostra o estágio.
+- **QA-PP14 (escopo):** um PLAYER continua sem acessar backoffice (403) e vê só os próprios dados.
+- **QA-PP15 (regressão):** `pnpm test` (115) e `pnpm build` verdes; fatia 1 (Home/Jogos/Perfil) segue funcionando.
+
+**Critérios de aceite:** QA-PP9 a QA-PP15 verdes. Falta só a fatia de Push para fechar o épico.
+
 ---
 
 ## Formato de reporte de bug (para o QA)

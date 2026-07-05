@@ -52,5 +52,5 @@ export async function middleware(req: NextRequest) {
 
 // Protege a Home e o Perfil; /login e /claim ficam livres.
 export const config = {
-  matcher: ['/', '/perfil/:path*', '/jogos/:path*'],
+  matcher: ['/', '/perfil/:path*', '/jogos/:path*', '/torneios/:path*', '/h2h/:path*'],
 };

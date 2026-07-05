@@ -4,6 +4,21 @@
 
 ---
 
+## v0.19.0 — Portal do Jogador: Meus Torneios, Rivais e Conquistas (2026-07-05)
+
+**Novidades**
+- **Meus Torneios:** o atleta vê os campeonatos que joga, com sua **posição, pontos e selo de campeão**; no detalhe, por rodada, o **seu grupo** (classificação com sua dupla em destaque), a **sua chave** do mata-mata e a **sua colocação**.
+- **Rivais (H2H):** retrospecto direto contra cada adversário — **vitórias × derrotas** e os últimos confrontos.
+- **Conquistas:** medalhas no Perfil (campeão, finalista, pódio, sequência, veterano…), com níveis bronze/prata/ouro; as ainda não conquistadas aparecem esmaecidas como metas.
+
+**Melhorias**
+- Correção do rótulo de rodada nos jogos de fase de grupos.
+
+**Pendências**
+- QA do PO. Última etapa do portal: **notificações push**.
+
+---
+
 ## v0.18.0 — Portal do Jogador: primeira versão (2026-07-04)
 
 **Novidades**
