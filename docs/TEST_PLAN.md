@@ -306,6 +306,20 @@
 
 **Critérios de aceite:** QA-PP9 a QA-PP15 verdes. Falta só a fatia de Push para fechar o épico.
 
+### Roteiro de QA — Fase 12 (fatia 3 — Notificações Push)
+
+> Pré: migration `push_subscriptions` aplicada (`pnpm db:migrate`); **chaves VAPID** no `.env` da API (`npx web-push generate-vapid-keys`). Testar no **Chrome/Edge desktop** (ou Android); no iOS só com o PWA instalado (16.4+). Push é HTTPS em produção; em `localhost` funciona sem TLS.
+
+- **QA-PP16 (ativar):** Portal → Perfil → seção **Notificações** → **Ativar** → o navegador pede permissão → ao permitir, fica "Desativar" (assinatura salva; confere linha em `push_subscription`).
+- **QA-PP17 (resultado lançado):** no backoffice, lançar o resultado de um jogo do atleta → o dispositivo recebe **"Resultado lançado: {placar}"**; clicar abre `/jogos`.
+- **QA-PP18 (mudança de horário):** no backoffice, alterar horário/quadra de um jogo do atleta → recebe **"Jogo reagendado"**.
+- **QA-PP19 (vai começar):** agendar um jogo do atleta para ~1–2 min à frente (com `PUSH_START_LEAD_MIN` cobrindo) → em até 1 min chega **"Seu jogo vai começar"** (apenas **uma vez**).
+- **QA-PP20 (desativar):** **Desativar** no Perfil → não recebe mais; a assinatura some do banco.
+- **QA-PP21 (sem VAPID):** removendo as chaves, o toggle mostra **indisponível** e nada quebra (API sobe normal).
+- **QA-PP22 (regressão):** `pnpm test` (121) e `pnpm build` verdes; fatias 1 e 2 seguem OK.
+
+**Critérios de aceite:** QA-PP16 a QA-PP22 verdes. **Encerra o épico do Portal do Jogador** (e a Fase 12) após aprovação.
+
 ---
 
 ## Formato de reporte de bug (para o QA)

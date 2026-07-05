@@ -17,6 +17,7 @@ import {
 } from '@reb/contracts';
 import type { Prisma } from '@reb/db';
 import { PrismaService } from '../prisma/prisma.service';
+import { PushService, type PushPayload } from '../push/push.service';
 import { KnockoutService } from './knockout.service';
 
 type GroupWithData = Prisma.GroupGetPayload<{
@@ -37,7 +38,28 @@ export class MatchesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly knockout: KnockoutService,
+    private readonly push: PushService,
   ) {}
+
+  /** Notifica (best-effort) os jogadores das duas duplas de um jogo. */
+  private async notifyMatchPlayers(
+    teamAId: string,
+    teamBId: string,
+    payload: PushPayload,
+  ): Promise<void> {
+    try {
+      const players = await this.prisma.teamPlayer.findMany({
+        where: { teamId: { in: [teamAId, teamBId] } },
+        select: { playerId: true },
+      });
+      await this.push.notifyPlayers(
+        players.map((p) => p.playerId),
+        payload,
+      );
+    } catch {
+      /* notificação é best-effort; não interrompe o fluxo */
+    }
+  }
 
   async getMatches(clubId: string, roundId: string): Promise<MatchView[]> {
     const groups = await this.loadGroups(clubId, roundId);
@@ -189,6 +211,13 @@ export class MatchesService {
       }
     });
 
+    const score = data.sets.map((s) => `${s.a}-${s.b}`).join(' ');
+    await this.notifyMatchPlayers(match.teamAId, match.teamBId, {
+      title: 'Resultado lançado',
+      body: `Seu jogo foi registrado: ${score}.`,
+      url: '/jogos',
+    });
+
     // Jogo de mata-mata: avança a chave (próxima fase / 3º lugar / finalização).
     if (match.phase === 'KNOCKOUT') {
       await this.knockout.progress(clubId, round.id);
@@ -301,7 +330,7 @@ export class MatchesService {
           { round: { championship: { season: { clubId } } } },
         ],
       },
-      select: { id: true },
+      select: { id: true, teamAId: true, teamBId: true },
     });
     if (!match) {
       throw new NotFoundException({
@@ -329,6 +358,14 @@ export class MatchesService {
       data.scheduledAt = dto.scheduledAt ? new Date(dto.scheduledAt) : null;
     }
     await this.prisma.match.update({ where: { id: matchId }, data });
+
+    if (dto.scheduledAt !== undefined || dto.venueId !== undefined) {
+      await this.notifyMatchPlayers(match.teamAId, match.teamBId, {
+        title: 'Jogo reagendado',
+        body: 'O horário ou a quadra do seu jogo foi atualizado. Confira.',
+        url: '/jogos',
+      });
+    }
 
     return this.fetchMatchView(matchId);
   }

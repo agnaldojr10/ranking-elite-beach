@@ -141,3 +141,23 @@ export const MeAchievementSchema = z.object({
   tier: AchievementTierSchema.nullable(),
 });
 export type MeAchievement = z.infer<typeof MeAchievementSchema>;
+
+// ---------------------------------------------------------------------------
+// Web Push (notificações do Portal)
+// ---------------------------------------------------------------------------
+
+/** Assinatura de push do navegador (formato do PushSubscription.toJSON()). */
+export const PushSubscriptionInputSchema = z.object({
+  endpoint: z.string().url(),
+  keys: z.object({
+    p256dh: z.string().min(1),
+    auth: z.string().min(1),
+  }),
+});
+export type PushSubscriptionInput = z.infer<typeof PushSubscriptionInputSchema>;
+
+/** Chave pública VAPID (null quando o push está desativado no servidor). */
+export const PushPublicKeySchema = z.object({
+  publicKey: z.string().nullable(),
+});
+export type PushPublicKey = z.infer<typeof PushPublicKeySchema>;

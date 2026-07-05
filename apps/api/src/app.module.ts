@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { validateEnv } from './config/env';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
@@ -17,6 +18,7 @@ import { VenuesModule } from './venues/venues.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { FinalsModule } from './finals/finals.module';
 import { MeModule } from './me/me.module';
+import { PushModule } from './push/push.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -27,6 +29,7 @@ import { HealthController } from './health/health.controller';
       envFilePath: ['../../.env', '.env'],
       validate: validateEnv,
     }),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -52,6 +55,7 @@ import { HealthController } from './health/health.controller';
     CalendarModule,
     FinalsModule,
     MeModule,
+    PushModule,
   ],
   controllers: [HealthController],
   providers: [

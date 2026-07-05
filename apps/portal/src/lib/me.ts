@@ -8,6 +8,7 @@ import type {
   Player,
   PlayerMatch,
   PlayerStats,
+  PushPublicKey,
 } from '@reb/contracts';
 import { apiFetch } from './api';
 
@@ -59,4 +60,9 @@ export async function getMyH2H(opponentId: string): Promise<MeH2H | null> {
 export async function getMyAchievements(): Promise<MeAchievement[]> {
   const res = await apiFetch<MeAchievement[]>('/me/achievements');
   return res.ok ? res.data : [];
+}
+
+export async function getPushPublicKey(): Promise<string | null> {
+  const res = await apiFetch<PushPublicKey>('/me/push/public-key');
+  return res.ok ? res.data.publicKey : null;
 }

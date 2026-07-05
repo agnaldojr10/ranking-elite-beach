@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { PushModule } from '../push/push.module';
 import { DrawService } from './draw.service';
 import { HistoryService } from './history.service';
 import { KnockoutService } from './knockout.service';
@@ -10,6 +11,7 @@ import { RoundsController } from './rounds.controller';
 import { RoundsService } from './rounds.service';
 
 @Module({
+  imports: [PushModule],
   controllers: [RoundsController, RegistrationsController, MatchesController],
   providers: [
     RoundsService,
