@@ -12,3 +12,4 @@ export * from './stats';
 export * from './venue';
 export * from './calendar';
 export * from './finals';
+export * from './player-portal';

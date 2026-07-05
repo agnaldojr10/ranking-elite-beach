@@ -108,19 +108,20 @@ model Club {
   @@map("club")
 }
 
-/// Usuário do sistema (login). Pode estar vinculado a um jogador (playerId) no futuro.
+/// Usuário do sistema (login). Um atleta tem um User vinculado ao seu Player (Portal do Jogador).
 model User {
   id           String   @id @default(uuid()) @db.Uuid
   clubId       String   @map("club_id") @db.Uuid
   email        String   @unique
   passwordHash String   @map("password_hash")
   role         Role     @default(VIEWER)
-  playerId     String?  @map("player_id") @db.Uuid
+  playerId     String?  @unique @map("player_id") @db.Uuid
   isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   club            Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  player          Player?          @relation(fields: [playerId], references: [id], onDelete: SetNull)
   draws           Draw[]
   matchUpdates    Match[]          @relation("MatchUpdatedBy")
   matchResultLogs MatchResultLog[]
@@ -142,14 +143,34 @@ model Player {
   createdAt  DateTime     @default(now()) @map("created_at")
   updatedAt  DateTime     @updatedAt @map("updated_at")
 
-  club          Club           @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  registrations Registration[] @relation("PlayerRegistrations")
-  substitutions Registration[] @relation("PlayerSubstitutions")
-  teamPlayers   TeamPlayer[]   @relation("PlayerTeams")
+  club          Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  registrations Registration[]  @relation("PlayerRegistrations")
+  substitutions Registration[]  @relation("PlayerSubstitutions")
+  teamPlayers   TeamPlayer[]    @relation("PlayerTeams")
+  user          User?
+  invites       PlayerInvite[]
 
   @@index([clubId, status])
   @@index([clubId, name])
   @@map("player")
+}
+
+/// Convite de uso único para um atleta reivindicar sua conta no Portal do Jogador.
+/// O código é guardado como hash (argon2); o valor em claro é exibido só ao gerar.
+model PlayerInvite {
+  id          String    @id @default(uuid()) @db.Uuid
+  clubId      String    @map("club_id") @db.Uuid
+  playerId    String    @map("player_id") @db.Uuid
+  codeHash    String    @unique @map("code_hash")
+  expiresAt   DateTime  @map("expires_at")
+  usedAt      DateTime? @map("used_at")
+  createdById String    @map("created_by_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([playerId])
+  @@map("player_invite")
 }
 
 /// Temporada (ex.: 2026). Agrupa campeonatos e preserva histórico.

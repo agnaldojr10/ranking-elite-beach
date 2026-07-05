@@ -43,6 +43,21 @@ services:
       api:
         condition: service_healthy
 
+  portal:
+    build:
+      context: .
+      dockerfile: apps/portal/Dockerfile
+    image: reb-portal:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    ports:
+      - "3001:3001"
+    depends_on:
+      api:
+        condition: service_healthy
+
   # Aplica as migrations no Neon e sai. Não sobe com `up` (profile dedicado).
   # Uso: docker compose -f docker-compose.prod.yml run --rm migrate
   migrate:

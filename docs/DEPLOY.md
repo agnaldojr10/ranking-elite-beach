@@ -5,10 +5,12 @@
 ## Topologia
 
 ```
-[ navegador ] --HTTPS--> [ reverse proxy / TLS ] --> web (Next.js BFF :3000) --HTTP--> api (NestJS :3333) --SSL--> Neon (Postgres)
+[ organização ] --HTTPS--> web    (Next BFF :3000) ┐
+                                                    ├─HTTP--> api (NestJS :3333) --SSL--> Neon (Postgres)
+[ atleta ]      --HTTPS--> portal (Next BFF :3001) ┘
 ```
 
-- **web** é um **BFF**: o servidor Next fala com a API server-side via `API_URL`; o navegador não acessa a API diretamente.
+- **web** (backoffice da organização) e **portal** (app do atleta) são **BFFs**: o servidor Next fala com a API server-side via `API_URL`; o navegador não acessa a API diretamente. Sirva cada um em seu domínio/subdomínio (ex.: `app.` e `meu.`), ambos com HTTPS.
 - **api** valida CORS (`WEB_ORIGIN`), aplica rate-limit e cabeçalhos de segurança (ver `docs/API.md §1.1`).
 - **banco**: Neon, acessado por `DATABASE_URL` com `sslmode=require`.
 

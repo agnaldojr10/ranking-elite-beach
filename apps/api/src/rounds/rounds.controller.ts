@@ -28,10 +28,12 @@ import { DrawService } from './draw.service';
 import { RegistrationsService } from './registrations.service';
 import { RoundsService } from './rounds.service';
 
+// Backoffice: fechado para o papel PLAYER (o atleta usa /me/* no portal).
 @ApiTags('rounds')
 @ApiBearerAuth()
 @Controller()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN', 'ORGANIZER', 'VIEWER')
 export class RoundsController {
   constructor(
     private readonly rounds: RoundsService,

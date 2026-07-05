@@ -1,15 +1,17 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import {
   JwtPayloadSchema,
   type AuthUser,
+  type ClaimRequest,
   type JwtPayload,
   type LoginRequest,
   type LoginResponse,
   type TokenPair,
 } from '@reb/contracts';
+import { InvitesService } from '../invites/invites.service';
 import { UsersService } from '../users/users.service';
 
 @Injectable()
@@ -18,7 +20,39 @@ export class AuthService {
     private readonly users: UsersService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    private readonly invites: InvitesService,
   ) {}
+
+  /** Reivindica a conta de atleta via convite: cria o login PLAYER e emite tokens. */
+  async claim(dto: ClaimRequest): Promise<LoginResponse> {
+    const invite = await this.invites.findValidByCode(dto.code);
+
+    const existing = await this.users.findByEmail(dto.email);
+    if (existing) {
+      throw new ConflictException({
+        error: { code: 'EMAIL_EXISTS', message: 'E-mail já cadastrado' },
+      });
+    }
+
+    const passwordHash = await argon2.hash(dto.password);
+    const user = await this.users.createAthlete({
+      email: dto.email,
+      passwordHash,
+      clubId: invite.clubId,
+      playerId: invite.playerId,
+      inviteId: invite.id,
+    });
+
+    const authUser: AuthUser = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      clubId: user.clubId,
+      playerId: user.playerId,
+    };
+    const tokens = await this.signTokens(authUser);
+    return { ...tokens, user: authUser };
+  }
 
   async login(dto: LoginRequest): Promise<LoginResponse> {
     const user = await this.users.findByEmail(dto.email);
@@ -77,6 +111,7 @@ export class AuthService {
       email: user.email,
       role: user.role,
       clubId: user.clubId,
+      playerId: user.playerId,
     };
 
     const [accessToken, refreshToken] = await Promise.all([

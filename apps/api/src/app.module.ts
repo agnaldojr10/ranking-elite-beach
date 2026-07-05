@@ -16,6 +16,7 @@ import { StatsModule } from './stats/stats.module';
 import { VenuesModule } from './venues/venues.module';
 import { CalendarModule } from './calendar/calendar.module';
 import { FinalsModule } from './finals/finals.module';
+import { MeModule } from './me/me.module';
 import { HealthController } from './health/health.controller';
 
 @Module({
@@ -50,6 +51,7 @@ import { HealthController } from './health/health.controller';
     VenuesModule,
     CalendarModule,
     FinalsModule,
+    MeModule,
   ],
   controllers: [HealthController],
   providers: [
