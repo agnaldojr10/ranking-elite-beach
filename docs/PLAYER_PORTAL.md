@@ -22,6 +22,11 @@
 - **Jogos** (`/jogos`): agenda (a jogar) + histórico (com resultado e placar).
 - Login/Claim, boundaries, **PWA** dedicado (manifest/SW/offline/ícones próprios).
 
+**Fatia 3 (Push / PWA):**
+- **Notificações push** (Web Push/VAPID): toggle "Notificações" no Perfil (ativar/desativar). Eventos: **resultado lançado**, **mudança de horário/quadra** e **"seu jogo vai começar"** (cron, `PUSH_START_LEAD_MIN` antes; anti-duplicidade via `Match.startNotifiedAt`).
+- Backend: `PushModule` (service/controller `/me/push/*` + `PushScheduler` `@Cron`), `web-push` + `@nestjs/schedule`; alvo = jogadores do `Match` → `User(playerId)` → assinaturas. **Desativado** sem chaves VAPID.
+- SW do portal trata `push`/`notificationclick`. **Caveat iOS:** Web Push exige o **PWA instalado** (iOS 16.4+).
+
 **Fatia 2 (Meus Torneios + H2H + Conquistas):**
 - **Torneios** (`/torneios`): campeonatos que participo (posição/pontos/rodadas, selo de campeão). Detalhe (`/torneios/[id]`): por rodada, **meu grupo** (mini-tabela destacando minha dupla), **minha chave** (meus confrontos do mata-mata) e **minha colocação/pontos**.
 - **H2H** (`/h2h` e `/h2h/[id]`): lista de rivais e retrospecto direto (V×D + últimos confrontos). Acesso pelo Perfil.

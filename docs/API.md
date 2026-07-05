@@ -40,6 +40,11 @@ Fluxo por **convite**: a organização gera um código para um `Player`; o atlet
 | GET | `/me/opponents` | PLAYER | adversários que já enfrentei (por nº de confrontos) |
 | GET | `/me/h2h/:opponentId` | PLAYER | retrospecto direto (V/D + últimos jogos) |
 | GET | `/me/achievements` | PLAYER | conquistas derivadas dos meus números |
+| GET | `/me/push/public-key` | PLAYER | chave pública VAPID (`{publicKey}`; null se push desativado) |
+| POST | `/me/push/subscribe` | PLAYER | registra a assinatura de push do dispositivo (204) |
+| POST | `/me/push/unsubscribe` | PLAYER | remove a assinatura (204) |
+
+**Notificações push** (Web Push/VAPID): a API notifica os jogadores de um jogo quando o **resultado é lançado**, quando o **horário/quadra muda**, e um **lembrete "vai começar"** (cron, `PUSH_START_LEAD_MIN` antes). Fica **desativado** se `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` não estiverem definidas.
 
 Erros do convite: `INVALID_INVITE` (404/401), `INVITE_USED` (409), `INVITE_EXPIRED` (409), `EMAIL_EXISTS` (409), `PLAYER_ALREADY_CLAIMED` (409). As leituras de backoffice (`/players/:id/stats`, `/championships/:id/ranking`, `/rounds/*`, etc.) são **fechadas ao papel PLAYER** — o atleta usa apenas `/me/*`.
 

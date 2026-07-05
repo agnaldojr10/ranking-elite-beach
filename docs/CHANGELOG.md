@@ -4,6 +4,17 @@
 
 ---
 
+## [0.20.0] — 2026-07-05 — Fase 12 (fatia 3): Portal — Notificações Push (para QA) — encerra o épico
+**Descrição:** Web Push no Portal do Jogador. **121 testes** (115 + 6). Migration `push_subscriptions` (nova tabela + `match.start_notified_at`).
+**Backend (API):**
+- Deps `web-push` + `@nestjs/schedule`; `ScheduleModule.forRoot()`.
+- `PushModule`: `PushService` (assinaturas, `notifyPlayers`, purga assinatura morta 404/410; desativado sem VAPID), `PushController` (`GET /me/push/public-key`, `POST /me/push/subscribe|unsubscribe`, `@Roles('PLAYER')`), `PushScheduler` (`@Cron` de minuto → lembrete "vai começar" via helper puro `dueForStartReminder`, anti-duplicidade `startNotifiedAt`).
+- Gatilhos em `matches.service`: **resultado lançado** e **mudança de horário/quadra** → `notifyPlayers` (best-effort). Env `VAPID_*`, `PUSH_START_LEAD_MIN`, `INVITE_TTL_DAYS`.
+**Portal (`apps/portal`):**
+- SW trata `push`/`notificationclick`; **toggle "Notificações"** no Perfil (`PushToggle`); BFF `/api/push/subscribe|unsubscribe`.
+**Migration:** `push_subscriptions`. **Contratos:** aditivos (`PushSubscriptionInput`, `PushPublicKey`). **Smoke:** boot com Schedule+Push OK; `/me/push/public-key` retorna a chave (PLAYER) e 403 (admin).
+**Caveat:** Web Push no iOS exige o PWA instalado (16.4+). **Pendências:** QA do PO. Com a aprovação, **encerra-se o épico do Portal do Jogador**.
+
 ## [0.19.0] — 2026-07-05 — Fase 12 (fatia 2): Portal — Meus Torneios + H2H + Conquistas (para QA)
 **Descrição:** Amplia o Portal do Jogador com os módulos de acompanhamento. **Sem migration** e sem novos modelos (tudo derivado de dados existentes). **115 testes** (108 + 7).
 **Backend (API):**

@@ -14,6 +14,13 @@ const EnvSchema = z.object({
   THROTTLE_TTL: z.coerce.number().default(60),
   THROTTLE_LIMIT: z.coerce.number().default(120),
   AUTH_THROTTLE_LIMIT: z.coerce.number().default(10),
+  // Web Push (Portal do Jogador). Sem as chaves VAPID, o push fica desativado.
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().default('mailto:admin@ranking-elite-beach.local'),
+  PUSH_START_LEAD_MIN: z.coerce.number().default(30),
+  // Convite do Portal (dias de validade).
+  INVITE_TTL_DAYS: z.coerce.number().default(14),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

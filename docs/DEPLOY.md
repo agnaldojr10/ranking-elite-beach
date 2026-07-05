@@ -40,7 +40,10 @@ Crie um arquivo `.env` no host, ao lado do `docker-compose.prod.yml` (baseado em
 | `JWT_ACCESS_TTL` / `JWT_REFRESH_TTL` | ambos | TTL dos tokens em segundos (devem casar entre api e web) |
 | `WEB_ORIGIN` | api | domínio **público da web** (ex.: `https://app.seudominio.com`) — usado no CORS |
 | `THROTTLE_TTL` / `THROTTLE_LIMIT` / `AUTH_THROTTLE_LIMIT` | api | rate-limit (defaults 60s / 120 / 10) |
-| `API_URL` | web | URL da API vista pelo servidor Next. No mesmo compose: `http://api:3333` |
+| `API_URL` | web/portal | URL da API vista pelos servidores Next. No mesmo compose: `http://api:3333` |
+| `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | api | Web Push do portal. Gere com `npx web-push generate-vapid-keys`. Sem elas, push desativado |
+| `VAPID_SUBJECT` | api | `mailto:` de contato do remetente das notificações |
+| `PUSH_START_LEAD_MIN` | api | antecedência (min) do lembrete "vai começar" (default 30) |
 | `API_PORT` | api | opcional (default 3333) |
 | `SEED_*` | seed | só para o seed inicial (clube + admin) |
 

@@ -4,6 +4,23 @@
 
 ---
 
+## v0.20.0 — Portal do Jogador: Notificações push (2026-07-05)
+
+**Novidades**
+- O atleta pode **ativar notificações** no Perfil e ser avisado no celular (mesmo com o app fechado):
+  - **resultado do seu jogo lançado**;
+  - **mudança de horário/quadra**;
+  - **"seu jogo vai começar"** (lembrete automático, minutos antes).
+
+**Notas**
+- Requer chaves VAPID configuradas no servidor (sem elas, o recurso aparece como indisponível).
+- No iPhone, o push exige o app **instalado** na tela inicial (iOS 16.4+).
+
+**Pendências**
+- QA do PO. Com a aprovação, **o Portal do Jogador fica completo**.
+
+---
+
 ## v0.19.0 — Portal do Jogador: Meus Torneios, Rivais e Conquistas (2026-07-05)
 
 **Novidades**

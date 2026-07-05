@@ -3,17 +3,19 @@ import { SKILL_LEVEL_LABELS } from '@reb/contracts';
 import { AchievementBadge } from '@/components/ui/AchievementBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { LogoutButton } from '@/components/ui/LogoutButton';
+import { PushToggle } from '@/components/ui/PushToggle';
 import { Shell } from '@/components/ui/Shell';
 import { StatTile } from '@/components/ui/StatTile';
-import { getMyAchievements, getMyProfile, getMyStats } from '@/lib/me';
+import { getMyAchievements, getMyProfile, getMyStats, getPushPublicKey } from '@/lib/me';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PerfilPage() {
-  const [profile, stats, achievements] = await Promise.all([
+  const [profile, stats, achievements, pushPublicKey] = await Promise.all([
     getMyProfile(),
     getMyStats(),
     getMyAchievements(),
+    getPushPublicKey(),
   ]);
 
   if (!profile) {
@@ -67,6 +69,13 @@ export default async function PerfilPage() {
           value={stats?.bestPlacement ? `${stats.bestPlacement}º` : '—'}
         />
       </div>
+
+      <section className="mt-6">
+        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">
+          Notificações
+        </h2>
+        <PushToggle publicKey={pushPublicKey} />
+      </section>
 
       {achievements.length > 0 ? (
         <section className="mt-6">
