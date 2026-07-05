@@ -1,14 +1,20 @@
+import Link from 'next/link';
 import { SKILL_LEVEL_LABELS } from '@reb/contracts';
+import { AchievementBadge } from '@/components/ui/AchievementBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { LogoutButton } from '@/components/ui/LogoutButton';
 import { Shell } from '@/components/ui/Shell';
 import { StatTile } from '@/components/ui/StatTile';
-import { getMyProfile, getMyStats } from '@/lib/me';
+import { getMyAchievements, getMyProfile, getMyStats } from '@/lib/me';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PerfilPage() {
-  const [profile, stats] = await Promise.all([getMyProfile(), getMyStats()]);
+  const [profile, stats, achievements] = await Promise.all([
+    getMyProfile(),
+    getMyStats(),
+    getMyAchievements(),
+  ]);
 
   if (!profile) {
     return (
@@ -62,8 +68,25 @@ export default async function PerfilPage() {
         />
       </div>
 
-      {stats?.favoritePartner || stats?.topOpponent ? (
-        <div className="mt-4 space-y-3">
+      {achievements.length > 0 ? (
+        <section className="mt-6">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted">Conquistas</h2>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {achievements.map((a) => (
+              <AchievementBadge key={a.code} a={a} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      <section className="mt-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Rivais</h2>
+          <Link href="/h2h" className="text-sm font-semibold text-ocean">
+            Ver todos ›
+          </Link>
+        </div>
+        <div className="mt-2 space-y-3">
           {stats?.favoritePartner ? (
             <RelRow
               label="Parceiro favorito"
@@ -72,14 +95,16 @@ export default async function PerfilPage() {
             />
           ) : null}
           {stats?.topOpponent ? (
-            <RelRow
-              label="Maior rival"
-              name={stats.topOpponent.playerName}
-              detail={`${stats.topOpponent.timesFaced}× enfrentados`}
-            />
+            <Link href={`/h2h/${stats.topOpponent.playerId}`} className="block">
+              <RelRow
+                label="Maior rival"
+                name={stats.topOpponent.playerName}
+                detail={`${stats.topOpponent.timesFaced}× · ver H2H ›`}
+              />
+            </Link>
           ) : null}
         </div>
-      ) : null}
+      </section>
     </Shell>
   );
 }

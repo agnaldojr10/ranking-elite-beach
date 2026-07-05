@@ -14,12 +14,19 @@
 2. Atleta: em `/claim`, informa **código + e-mail + senha** → cria o login **PLAYER** vinculado ao `Player` (um login por atleta, `User.playerId` único) e entra.
 3. Depois, login normal por e-mail/senha em `/login`.
 
-## Telas (fatia 1)
+## Telas
 
+**Fatia 1:**
 - **Home** (`/`): cartão-herói do atleta (foto, nível, posição no ranking, aproveitamento), **próximo jogo com contagem regressiva** (adversário/quadra/horário), KPIs (jogos, vitórias, títulos, sequência).
 - **Perfil** (`/perfil`): números completos (campeonatos, rodadas, V/D, aproveitamento, pontos, títulos, finais, melhor sequência/colocação, parceiro favorito, maior rival).
 - **Jogos** (`/jogos`): agenda (a jogar) + histórico (com resultado e placar).
 - Login/Claim, boundaries, **PWA** dedicado (manifest/SW/offline/ícones próprios).
+
+**Fatia 2 (Meus Torneios + H2H + Conquistas):**
+- **Torneios** (`/torneios`): campeonatos que participo (posição/pontos/rodadas, selo de campeão). Detalhe (`/torneios/[id]`): por rodada, **meu grupo** (mini-tabela destacando minha dupla), **minha chave** (meus confrontos do mata-mata) e **minha colocação/pontos**.
+- **H2H** (`/h2h` e `/h2h/[id]`): lista de rivais e retrospecto direto (V×D + últimos confrontos). Acesso pelo Perfil.
+- **Conquistas**: seção no Perfil com medalhas (campeão, finalista, pódio, sequência, veterano, vencedor, consistente), conquistadas/bloqueadas por tier (bronze/prata/ouro).
+- Navegação inferior: Início · Torneios · Jogos · Perfil.
 
 ## Design (skin imersiva)
 
