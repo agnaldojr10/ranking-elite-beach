@@ -7,6 +7,7 @@ import {
   CreateRegistrationSchema,
   CreateRoundSchema,
   RecordClassificationSchema,
+  UpdateRoundSchema,
   type DrawResult,
   type RegistrationStatus,
   type RoundStatus,
@@ -162,6 +163,49 @@ export async function registerMatchResultAction(
 
   revalidatePath(`/rounds/${roundId}/results`);
   return { ok: true };
+}
+
+export async function updateRoundAction(
+  roundId: string,
+  championshipId: string,
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const rawNumber = String(formData.get('number') ?? '').trim();
+  const parsed = UpdateRoundSchema.safeParse({
+    ...(rawNumber ? { number: rawNumber } : {}),
+    date: formData.get('date') ?? '',
+    groupSizePref: formData.get('groupSizePref') ?? 3,
+    matchFormat: {
+      sets: Number(formData.get('sets') ?? 1),
+      gamesPerSet: Number(formData.get('gamesPerSet') ?? 6),
+      matchTieBreak: formData.get('matchTieBreak') === 'on',
+    },
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Dados inválidos' };
+
+  const res = await apiFetch(`/rounds/${roundId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(parsed.data),
+  });
+  if (!res.ok) return { error: res.message };
+
+  revalidatePath(`/rounds/${roundId}`);
+  revalidatePath(`/championships/${championshipId}`);
+  redirect(`/rounds/${roundId}`);
+}
+
+export async function deleteRoundAction(
+  roundId: string,
+  championshipId: string,
+): Promise<void> {
+  const res = await apiFetch(`/rounds/${roundId}`, { method: 'DELETE' });
+  if (!res.ok) {
+    // Mantém o usuário na rodada com a mensagem de erro na querystring.
+    redirect(`/rounds/${roundId}?erro=${encodeURIComponent(res.message)}`);
+  }
+  revalidatePath(`/championships/${championshipId}`);
+  redirect(`/championships/${championshipId}`);
 }
 
 export async function createRoundAction(
