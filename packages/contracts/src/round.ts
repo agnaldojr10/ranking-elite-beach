@@ -122,6 +122,13 @@ export const CreateRegistrationSchema = z.object({
 });
 export type CreateRegistration = z.infer<typeof CreateRegistrationSchema>;
 
+/** Inscrição em lote (vários jogadores de uma vez). */
+export const BulkCreateRegistrationSchema = z.object({
+  playerIds: z.array(z.string().uuid()).min(1, 'Selecione ao menos 1 jogador').max(64),
+  status: RegistrationStatusSchema.default('CONFIRMED'),
+});
+export type BulkCreateRegistration = z.infer<typeof BulkCreateRegistrationSchema>;
+
 export const UpdateRegistrationSchema = z
   .object({
     status: RegistrationStatusSchema,

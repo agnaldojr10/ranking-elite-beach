@@ -2,7 +2,8 @@
  * Popula os dados REAIS do "Ranking Elite Beach Tennis":
  * Temporada 2026, campeonato ATIVO com a pontuação real (podium + participação 10),
  * os 18 atletas e a 1ª rodada (02/07/2026) já classificada (sem placares — partimos
- * dos pontos da planilha). Rode DEPOIS do reset-domain, com Club + admin presentes.
+ * dos pontos da planilha), com as DUPLAS reais + histórico de parceria (para o
+ * sorteio das próximas rodadas não repetir as duplas). Rode DEPOIS do reset-domain.
  * Uso: pnpm --filter @reb/db seed:real
  */
 import { PrismaClient, Prisma } from '@prisma/client';
@@ -10,26 +11,36 @@ import { PrismaClient, Prisma } from '@prisma/client';
 const prisma = new PrismaClient();
 const ADMIN_EMAIL = (process.env.SEED_ADMIN_EMAIL ?? 'admin@ranking-elite-beach.local').toLowerCase();
 
-// Classificação 1º..18º da 1ª rodada (planilha). Os pontos vêm da COLOCAÇÃO da dupla.
-const ATHLETES = [
-  'Éberson', 'Yan', // campeões (100)
-  'Luis Carlos', 'Mateus', // vice (70)
-  'Fabiano', 'Lucas', // 3º (50)
-  'Gean', 'Igor', // 4º (30)
-  'Bruno Vilela', 'Bruno Pedro', // participação (10)
-  'Godoy', 'Gustavo',
-  'Sérgio Xingu', 'Mateus Cardoso',
-  'Junior Minuci', 'Rafael',
-  'Rafael Junior', 'João Alfonso',
+// 18 atletas (nomes cadastrados).
+const PLAYERS = [
+  'Éberson', 'Yan', 'Luis Carlos', 'Mateus', 'Fabiano', 'Lucas', 'Gean', 'Igor',
+  'Bruno Vilela', 'Bruno Pedro', 'Godoy', 'Gustavo', 'Sérgio Xingu', 'Mateus Cardoso',
+  'Junior Minuci', 'Rafael', 'Rafael Junior', 'João Alfonso',
+];
+
+// Duplas REAIS da 1ª rodada, na ordem de colocação (1=campeão … 9=participação).
+const ROUND1_PAIRS: [string, string][] = [
+  ['Éberson', 'Yan'], // 1º — campeão (100)
+  ['Luis Carlos', 'Mateus'], // 2º — vice (70)
+  ['Fabiano', 'Lucas'], // 3º (50)
+  ['Gean', 'Igor'], // 4º (30)
+  ['Godoy', 'Bruno Pedro'], // participação (10)
+  ['Bruno Vilela', 'Gustavo'],
+  ['Mateus Cardoso', 'Junior Minuci'],
+  ['Sérgio Xingu', 'Rafael'],
+  ['Rafael Junior', 'João Alfonso'],
 ];
 
 const MATCH_FORMAT = { sets: 1, gamesPerSet: 6, tieBreakAt: 6, matchTieBreak: false, walkoverGames: 6 };
 const SCORING_TABLE = { '1': 100, '2': 70, '3': 50, '4': 30 };
 const PARTICIPATION_POINTS = 10;
 
-/** Pontos por posição da dupla (1..): podium via tabela, resto = participação. */
 function pointsForPosition(position: number): number {
   return (SCORING_TABLE as Record<string, number>)[String(position)] ?? PARTICIPATION_POINTS;
+}
+/** Par normalizado (a<b por string) — igual ao pairKey/normalizePair do domínio. */
+function normalize(a: string, b: string): [string, string] {
+  return a < b ? [a, b] : [b, a];
 }
 
 async function main() {
@@ -38,7 +49,6 @@ async function main() {
   const admin = await prisma.user.findUnique({ where: { email: ADMIN_EMAIL } });
   if (!admin) throw new Error(`Admin ${ADMIN_EMAIL} não encontrado — rode o seed base antes.`);
 
-  // Temporada + campeonato ATIVO + config (com participação 10).
   const season = await prisma.season.create({
     data: { clubId: club.id, year: 2026, name: 'Temporada 2026', status: 'OPEN' },
   });
@@ -65,15 +75,19 @@ async function main() {
     },
   });
 
-  // Atletas (birthDate placeholder — organização edita depois).
-  const players = [];
-  for (const name of ATHLETES) {
-    players.push(
-      await prisma.player.create({
-        data: { clubId: club.id, name, birthDate: new Date('1990-01-01'), skillLevel: 'INTERMEDIATE', status: 'ACTIVE' },
-      }),
-    );
+  // Atletas (birthDate placeholder — organização edita depois). name → id.
+  const idByName = new Map<string, string>();
+  for (const name of PLAYERS) {
+    const p = await prisma.player.create({
+      data: { clubId: club.id, name, birthDate: new Date('1990-01-01'), skillLevel: 'INTERMEDIATE', status: 'ACTIVE' },
+    });
+    idByName.set(name, p.id);
   }
+  const idOf = (name: string) => {
+    const id = idByName.get(name);
+    if (!id) throw new Error(`Jogador não encontrado no seed: ${name}`);
+    return id;
+  };
 
   // Rodada 1 já FINALIZADA + Draw (obrigatório p/ Team).
   const round = await prisma.round.create({
@@ -99,34 +113,39 @@ async function main() {
     },
   });
 
-  // Duplas por colocação (1º+2º, 3º+4º, …) → RoundResult com os pontos.
-  for (let i = 0; i < players.length; i += 2) {
-    const position = i / 2 + 1;
-    const a = players[i]!;
-    const b = players[i + 1]!;
+  // Duplas reais → Team + RoundResult (pontos por colocação) + inscrições + histórico.
+  for (let i = 0; i < ROUND1_PAIRS.length; i++) {
+    const position = i + 1;
+    const [nameA, nameB] = ROUND1_PAIRS[i]!;
+    const aId = idOf(nameA);
+    const bId = idOf(nameB);
     const team = await prisma.team.create({
       data: {
         roundId: round.id,
         drawId: draw.id,
         label: `Dupla ${position}`,
         strength: 0,
-        players: { create: [{ playerId: a.id }, { playerId: b.id }] },
+        players: { create: [{ playerId: aId }, { playerId: bId }] },
       },
     });
     await prisma.roundResult.create({
       data: { roundId: round.id, teamId: team.id, finalPosition: position, pointsAwarded: pointsForPosition(position) },
     });
-    // Inscrições confirmadas (18 participantes da rodada).
     await prisma.registration.createMany({
       data: [
-        { roundId: round.id, playerId: a.id, status: 'CONFIRMED' },
-        { roundId: round.id, playerId: b.id, status: 'CONFIRMED' },
+        { roundId: round.id, playerId: aId, status: 'CONFIRMED' },
+        { roundId: round.id, playerId: bId, status: 'CONFIRMED' },
       ],
+    });
+    // Histórico de parceria (para o sorteio das próximas rodadas evitar repetir).
+    const [pA, pB] = normalize(aId, bId);
+    await prisma.partnerHistory.create({
+      data: { clubId: club.id, playerAId: pA, playerBId: pB, timesTogether: 1, lastRoundId: round.id },
     });
   }
 
-  console.log(`OK — Temporada 2026, campeonato "${championship.name}" (ATIVO), 18 atletas e a rodada 1 (02/07/2026) populados.`);
-  console.log('Ranking esperado: Éberson/Yan 100 · Luis Carlos/Mateus 70 · Fabiano/Lucas 50 · Gean/Igor 30 · demais 10.');
+  console.log(`OK — Temporada 2026, "${championship.name}" (ATIVO), 18 atletas, rodada 1 com as duplas reais + histórico de parceria.`);
+  console.log('Ranking: Éberson/Yan 100 · Luis Carlos/Mateus 70 · Fabiano/Lucas 50 · Gean/Igor 30 · demais 10.');
 }
 
 main()

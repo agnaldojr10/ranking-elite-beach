@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   RegistrationSchema,
+  type BulkCreateRegistration,
   type CreateRegistration,
   type Registration as RegistrationDto,
   type UpdateRegistration,
@@ -70,6 +71,45 @@ export class RegistrationsService {
       include: registrationInclude,
     });
     return this.toDto(created);
+  }
+
+  /**
+   * Inscreve vários jogadores de uma vez. Ignora quem já está inscrito (dedupe),
+   * inválido para o clube ou inativo (BR-03). Retorna quantos foram adicionados.
+   */
+  async createMany(
+    clubId: string,
+    roundId: string,
+    dto: BulkCreateRegistration,
+  ): Promise<{ added: number }> {
+    const round = await this.prisma.round.findFirst({
+      where: { id: roundId, championship: { season: { clubId } } },
+      select: { id: true, status: true },
+    });
+    if (!round) {
+      throw new NotFoundException({
+        error: { code: 'ROUND_NOT_FOUND', message: 'Rodada não encontrada' },
+      });
+    }
+    if (round.status === 'FINISHED') {
+      throw new ConflictException({
+        error: { code: 'ROUND_CLOSED', message: 'A rodada está encerrada' },
+      });
+    }
+
+    const ids = [...new Set(dto.playerIds)];
+    // Só jogadores válidos do clube e ATIVOS (BR-03).
+    const valid = await this.prisma.player.findMany({
+      where: { id: { in: ids }, clubId, status: 'ACTIVE' },
+      select: { id: true },
+    });
+    if (valid.length === 0) return { added: 0 };
+
+    const result = await this.prisma.registration.createMany({
+      data: valid.map((p) => ({ roundId, playerId: p.id, status: dto.status })),
+      skipDuplicates: true,
+    });
+    return { added: result.count };
   }
 
   async update(clubId: string, id: string, dto: UpdateRegistration): Promise<RegistrationDto> {
