@@ -47,7 +47,7 @@ async function main() {
       seasonId: season.id,
       name: 'Ranking Elite Beach Tennis',
       roundsCount: 20,
-      qualifiersCount: 8,
+      qualifiersCount: 12,
       status: 'ACTIVE',
       startDate: new Date('2026-07-02'),
       config: {

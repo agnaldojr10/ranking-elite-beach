@@ -320,6 +320,16 @@
 
 **Critérios de aceite:** QA-PP16 a QA-PP22 verdes. **Encerra o épico do Portal do Jogador** (e a Fase 12) após aprovação.
 
+### Roteiro de QA — Fase 13 (lançamento por classificação + final top-12)
+
+> Backoffice. O caminho normal semanal é o fluxo completo; a tela de classificação é fallback.
+
+- **QA-C1 (fluxo completo):** criar rodada → abrir inscrições → inscrever pares (≥8, par) → simular/confirmar sorteio → lançar placares dos grupos → gerar mata-mata → jogar até a final → rodada **FINISHED**; o **ranking** soma os pontos (campeão 100 · vice 70 · 3º 50 · 4º 30 · demais 10).
+- **QA-C2 (classificação/fallback):** numa rodada nova, botão **"Lançar classificação"** → marcar participantes (+ espera) → escolher duplas campeão/vice/3º/4º → enviar → rodada FINISHED e ranking atualizado; reenviar → bloqueado (**RESULTS_EXIST**).
+- **QA-C3 (final = top 12):** com ≥12 atletas pontuados, no campeonato aparecem "12 melhores"; **Gerar fase final** cria a rodada FINAL_PHASE com os 12 primeiros do ranking; a final é jogada pelo fluxo normal e **não** volta pontos ao ranking (BR-34).
+
+**Critérios de aceite:** QA-C1 a QA-C3 verdes.
+
 ---
 
 ## Formato de reporte de bug (para o QA)

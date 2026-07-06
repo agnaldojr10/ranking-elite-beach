@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import {
   CreateRegistrationSchema,
   CreateRoundSchema,
+  RecordClassificationSchema,
   type DrawResult,
   type RegistrationStatus,
   type RoundStatus,
@@ -12,6 +13,24 @@ import {
 import { apiFetch } from '@/lib/api';
 
 export type FormState = { ok?: boolean; error?: string };
+
+/** Lança a rodada só por classificação (participantes + duplas do pódio). */
+export async function saveClassificationAction(
+  roundId: string,
+  payload: unknown,
+): Promise<FormState> {
+  const parsed = RecordClassificationSchema.safeParse(payload);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Dados inválidos' };
+  }
+  const res = await apiFetch(`/rounds/${roundId}/classification`, {
+    method: 'POST',
+    body: JSON.stringify(parsed.data),
+  });
+  if (!res.ok) return { error: res.message };
+  revalidatePath(`/rounds/${roundId}`);
+  return { ok: true };
+}
 
 export type DrawState = { result?: DrawResult; error?: string };
 

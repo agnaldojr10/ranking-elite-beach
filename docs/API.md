@@ -77,6 +77,8 @@ Erros do convite: `INVALID_INVITE` (404/401), `INVITE_USED` (409), `INVITE_EXPIR
 | PATCH | `/registrations/:id` | Organizer+ | muda situação / substitui (`substitutedById`) |
 | DELETE | `/registrations/:id` | Organizer+ | remove inscrição |
 
+| POST | `/rounds/:id/classification` | Organizer+ | **lança a rodada só pela classificação** (sem sorteio/placares): `{ participantIds[], waitlistIds[], podium: [{playerIds:[a,b]}] }` → cria as duplas (pódio + participação), grava os pontos e finaliza. `409 RESULTS_EXIST` se já houver resultados; `409 ROUND_FINISHED` se já finalizada. É um **fallback** — o caminho normal é sorteio→placares→mata-mata. |
+
 Erros de negócio desta seção: `422 PLAYER_INACTIVE` (BR-03), `409 REGISTRATION_EXISTS` (BR-09), `409 ROUND_NUMBER_EXISTS`, `409 INVALID_STATUS_TRANSITION`, `409 INVALID_SUBSTITUTE`. A prontidão (`readiness`) exposta no detalhe/lista antecipa `ODD_PLAYER_COUNT`/`PLAYER_COUNT_OUT_OF_RANGE`, cujo enforcement ocorre no sorteio (§6, Sprint 5).
 
 ## 6. Sorteio
