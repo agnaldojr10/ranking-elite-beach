@@ -6,6 +6,7 @@ import {
   MatchFormatSchema,
   RecordClassificationSchema,
   buildClassificationTeams,
+  buildRoundReport,
   computeRoundReadiness,
   describeRoundFormat,
   partitionGroups,
@@ -132,6 +133,55 @@ describe('describeRoundFormat (classificação flexível — Fase 14)', () => {
     const f = describeRoundFormat(8);
     expect(f.qualifiers).toBe(6);
     expect(f.bracketLabel).toBe('Quartas de final');
+  });
+});
+
+describe('buildRoundReport (texto para WhatsApp)', () => {
+  it('inclui colocação (com medalhas) e ranking, data em DD/MM/AAAA', () => {
+    const text = buildRoundReport({
+      championshipName: 'Ranking Elite Beach Tennis',
+      roundLabel: 'Rodada 5',
+      date: '2026-07-10',
+      results: [
+        { playerNames: ['Éberson', 'Yan'], finalPosition: 1, pointsAwarded: 100 },
+        { playerNames: ['Luis', 'Mateus'], finalPosition: 2, pointsAwarded: 70 },
+        { playerNames: ['Fabiano', 'Lucas'], finalPosition: 3, pointsAwarded: 50 },
+      ],
+      ranking: [
+        { playerName: 'Éberson', points: 250 },
+        { playerName: 'Yan', points: 240 },
+      ],
+    });
+    expect(text).toContain('Ranking Elite Beach Tennis');
+    expect(text).toContain('Rodada 5 — 10/07/2026');
+    expect(text).toContain('🥇 Éberson & Yan — 100 pts');
+    expect(text).toContain('🥉 Fabiano & Lucas — 50 pts');
+    expect(text).toContain('1. Éberson — 250 pts');
+  });
+
+  it('sem resultado final avisa que a rodada está em andamento', () => {
+    const text = buildRoundReport({
+      championshipName: 'X',
+      roundLabel: 'Rodada 1',
+      date: null,
+      results: [],
+      ranking: [{ playerName: 'A', points: 10 }],
+    });
+    expect(text).toContain('em andamento');
+    expect(text).toContain('1. A — 10 pts');
+  });
+
+  it('limita o ranking e sinaliza os demais', () => {
+    const ranking = Array.from({ length: 12 }, (_, i) => ({ playerName: `P${i}`, points: 12 - i }));
+    const text = buildRoundReport({
+      championshipName: 'X',
+      roundLabel: 'R',
+      date: null,
+      results: [],
+      ranking,
+      rankingLimit: 10,
+    });
+    expect(text).toContain('… e mais 2.');
   });
 });
 
