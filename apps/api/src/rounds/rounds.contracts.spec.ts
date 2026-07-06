@@ -100,31 +100,37 @@ describe('partitionGroups (BR-23 / FORMATS.md)', () => {
   });
 });
 
-describe('describeRoundFormat (FORMATS.md)', () => {
-  it('4 duplas → 1 grupo, Final', () => {
+describe('describeRoundFormat (classificação flexível — Fase 14)', () => {
+  it('4 duplas (8 jogadores) → 4 classificados, Semifinal direta', () => {
     const f = describeRoundFormat(4);
     expect(f.groupCount).toBe(1);
-    expect(f.bracketLabel).toBe('Final');
-    expect(f.qualifiers).toBe(2);
+    expect(f.qualifiers).toBe(4);
+    expect(f.bracketLabel).toBe('Semifinal');
   });
 
-  it('6 duplas → 2 grupos, Semifinal', () => {
+  it('5 duplas → 4 classificados, Semifinal', () => {
+    const f = describeRoundFormat(5);
+    expect(f.qualifiers).toBe(4);
+    expect(f.bracketSize).toBe(4);
+  });
+
+  it('6 duplas (12 jogadores) → 6 classificados (2 byes + quartas)', () => {
     const f = describeRoundFormat(6);
     expect(f.groupCount).toBe(2);
-    expect(f.bracketSize).toBe(4);
+    expect(f.qualifiers).toBe(6);
+    expect(f.bracketSize).toBe(6);
   });
 
-  it('9 duplas → 3 grupos, chave 4, 3 venc. + 1 melhor 2º', () => {
+  it('9 duplas (18 jogadores) → 6 classificados (2 byes + quartas)', () => {
     const f = describeRoundFormat(9);
     expect(f.groupCount).toBe(3);
-    expect(f.bracketSize).toBe(4);
-    expect(f.groupWinners).toBe(3);
-    expect(f.bestRunnersUp).toBe(1);
+    expect(f.qualifiers).toBe(6);
+    expect(f.bracketSize).toBe(6);
   });
 
-  it('16 duplas → chave 8 (Quartas)', () => {
-    const f = describeRoundFormat(16);
-    expect(f.bracketSize).toBe(8);
+  it('8 duplas (16 jogadores) → 6 classificados', () => {
+    const f = describeRoundFormat(8);
+    expect(f.qualifiers).toBe(6);
     expect(f.bracketLabel).toBe('Quartas de final');
   });
 });

@@ -33,103 +33,125 @@ export function stageCode(teamsInStage: number): string {
   }
 }
 
-function nextPowerOfTwo(n: number): number {
-  let p = 1;
-  while (p < n) p *= 2;
-  return p;
-}
-
 // ---------------------------------------------------------------------------
-// Classificados e chaveamento (FORMATS.md)
+// Classificados e chaveamento
 // ---------------------------------------------------------------------------
 export type Qualifier = {
   teamId: string;
-  seedRank: number; // 1..bracketSize
+  seedRank: number; // 1 = melhor (ranking global)
   groupName: string;
   groupPosition: number;
 };
 
 export type Pairing = { slot: number; teamAId: string; teamBId: string };
 
-/** Ranqueia colocados de mesma posição entre grupos por (vitórias → saldo de games). */
-function crossRank(
-  entries: { teamId: string; wins: number; gamesBalance: number; groupName: string; groupPosition: number }[],
-): { teamId: string; groupName: string; groupPosition: number }[] {
-  return [...entries]
-    .sort((a, b) => b.wins - a.wins || b.gamesBalance - a.gamesBalance)
-    .map(({ teamId, groupName, groupPosition }) => ({ teamId, groupName, groupPosition }));
-}
+// ---------------------------------------------------------------------------
+// Classificação flexível por nº de duplas (Fase 14) — automática, sem config.
+//
+//   D ≥ 6  → 6 classificados: as 2 melhores vão DIRETO à semifinal (bye) e a
+//            3ª–6ª disputam as quartas (2 vagas). Ex.: 18 jogadores (9 duplas,
+//            3 grupos de 3), 16 (2×4), 12 (2×3). 7º+ eliminados por desempenho.
+//   D = 4-5 → 4 classificados: semifinal direta (1×4, 2×3) → Final + 3º.
+//   D = 2-3 → 2 classificados: Final direta (1×2); 3º pela classificação.
+//
+// O ranqueamento é GLOBAL por vitórias → saldo de games (não por grupo), e as
+// quartas evitam revanche de grupo (invertem os pares quando possível).
+// ---------------------------------------------------------------------------
+export type KnockoutFormat = 'FINAL' | 'SEMI' | 'QUARTER_WITH_BYES';
 
-/** Tamanho da chave a partir do nº de grupos (BR-23/23b). */
-export function bracketSizeForGroups(groupCount: number): number {
-  if (groupCount <= 1) return 2;
-  if (groupCount === 2) return 4;
-  return nextPowerOfTwo(groupCount);
+export type KnockoutPlan = {
+  format: KnockoutFormat;
+  /** Classificados já ordenados por seed global (1 = melhor). */
+  qualifiers: Qualifier[];
+  /** Quantos avançam ao mata-mata (2, 4 ou 6). */
+  qualifierCount: number;
+  /** Duplas que vão direto à semifinal (só em QUARTER_WITH_BYES): [seed1, seed2]. */
+  byes: string[];
+  /** Primeira fase a ser criada: 'F' | 'SF' | 'QF'. */
+  firstStage: string;
+  firstPairings: Pairing[];
+};
+
+/** Ranqueia TODAS as duplas globalmente por vitórias → saldo de games. */
+export function globalRank(
+  groupStandings: GroupStandings[],
+): { teamId: string; groupName: string }[] {
+  return groupStandings
+    .flatMap((g) => g.standings.map((s) => ({ s, groupName: g.groupName })))
+    .sort((x, y) => y.s.wins - x.s.wins || y.s.gamesBalance - x.s.gamesBalance)
+    .map(({ s, groupName }) => ({ teamId: s.teamId, groupName }));
 }
 
 /**
- * Seleciona os classificados para o mata-mata (FORMATS.md):
- * G=1 → top-2; G=2 → top-2 de cada; G≥3 → vencedores + melhores 2ºs até fechar a chave.
- * Retorna com `seedRank` 1..bracketSize (vencedores primeiro, depois melhores 2ºs).
+ * Monta o plano do mata-mata a partir das classificações de grupo, de forma
+ * automática pelo nº de duplas. Ver descrição do bloco acima.
  */
-export function selectQualifiers(groupStandings: GroupStandings[]): {
-  qualifiers: Qualifier[];
-  bracketSize: number;
-  groupCount: number;
-} {
-  const groupCount = groupStandings.length;
-  const bracketSize = bracketSizeForGroups(groupCount);
+export function planKnockout(groupStandings: GroupStandings[]): KnockoutPlan {
+  const ranked = globalRank(groupStandings);
+  const groupOf = new Map(ranked.map((r) => [r.teamId, r.groupName]));
+  const met = (a: string, b: string) => !!a && !!b && groupOf.get(a) === groupOf.get(b);
+  const mkQual = (ids: string[]): Qualifier[] =>
+    ids.map((teamId, i) => ({
+      teamId,
+      seedRank: i + 1,
+      groupName: groupOf.get(teamId) ?? '',
+      groupPosition: 0,
+    }));
+  const D = ranked.length;
 
-  const at = (g: GroupStandings, pos: number) => g.standings.find((s) => s.position === pos);
-
-  if (groupCount <= 1) {
-    const g = groupStandings[0];
-    const first = g && at(g, 1);
-    const second = g && at(g, 2);
-    const qualifiers: Qualifier[] = [];
-    if (first) qualifiers.push({ teamId: first.teamId, seedRank: 1, groupName: g!.groupName, groupPosition: 1 });
-    if (second) qualifiers.push({ teamId: second.teamId, seedRank: 2, groupName: g!.groupName, groupPosition: 2 });
-    return { qualifiers, bracketSize, groupCount };
-  }
-
-  if (groupCount === 2) {
-    const [a, b] = groupStandings;
-    const qualifiers: Qualifier[] = [];
-    const push = (g: GroupStandings, pos: number, seed: number) => {
-      const s = at(g, pos);
-      if (s) qualifiers.push({ teamId: s.teamId, seedRank: seed, groupName: g.groupName, groupPosition: pos });
+  if (D >= 6) {
+    const [s1, s2, s3, s4, s5, s6] = ranked.slice(0, 6).map((r) => r.teamId) as [
+      string, string, string, string, string, string,
+    ];
+    // Pares default (4×5, 3×6) x alternativo (4×6, 3×5): escolhe o de menos revanches.
+    const def: [string, string][] = [[s4, s5], [s3, s6]];
+    const alt: [string, string][] = [[s4, s6], [s3, s5]];
+    const rematches = (ps: [string, string][]) => ps.filter(([a, b]) => met(a, b)).length;
+    const pairs = rematches(alt) < rematches(def) ? alt : def;
+    // O par com o seed4 enfrenta o bye seed1 (SF slot 0); o com seed3 enfrenta seed2 (slot 1).
+    const slot0 = pairs.find((p) => p.includes(s4))!;
+    const slot1 = pairs.find((p) => p.includes(s3))!;
+    const firstPairings: Pairing[] = [
+      { slot: 0, teamAId: slot0[0], teamBId: slot0[1] },
+      { slot: 1, teamAId: slot1[0], teamBId: slot1[1] },
+    ];
+    return {
+      format: 'QUARTER_WITH_BYES',
+      qualifiers: mkQual([s1, s2, s3, s4, s5, s6]),
+      qualifierCount: 6,
+      byes: [s1, s2],
+      firstStage: 'QF',
+      firstPairings,
     };
-    // seeds só para referência; o pareamento G=2 é cruzado (1A×2B, 1B×2A).
-    push(a!, 1, 1);
-    push(b!, 1, 2);
-    push(a!, 2, 3);
-    push(b!, 2, 4);
-    return { qualifiers, bracketSize, groupCount };
   }
 
-  // G >= 3: vencedores + melhores 2ºs.
-  const winners = crossRank(
-    groupStandings
-      .map((g) => ({ g, s: at(g, 1) }))
-      .filter((x): x is { g: GroupStandings; s: NonNullable<ReturnType<typeof at>> } => Boolean(x.s))
-      .map(({ g, s }) => ({ teamId: s.teamId, wins: s.wins, gamesBalance: s.gamesBalance, groupName: g.groupName, groupPosition: 1 })),
-  );
-  const runnersUp = crossRank(
-    groupStandings
-      .map((g) => ({ g, s: at(g, 2) }))
-      .filter((x): x is { g: GroupStandings; s: NonNullable<ReturnType<typeof at>> } => Boolean(x.s))
-      .map(({ g, s }) => ({ teamId: s.teamId, wins: s.wins, gamesBalance: s.gamesBalance, groupName: g.groupName, groupPosition: 2 })),
-  );
+  if (D >= 4) {
+    const [q1, q2, q3, q4] = ranked.slice(0, 4).map((r) => r.teamId) as [
+      string, string, string, string,
+    ];
+    return {
+      format: 'SEMI',
+      qualifiers: mkQual([q1, q2, q3, q4]),
+      qualifierCount: 4,
+      byes: [],
+      firstStage: 'SF',
+      firstPairings: [
+        { slot: 0, teamAId: q1, teamBId: q4 },
+        { slot: 1, teamAId: q2, teamBId: q3 },
+      ],
+    };
+  }
 
-  const needFromRunners = bracketSize - winners.length;
-  const chosen = [...winners, ...runnersUp.slice(0, Math.max(0, needFromRunners))];
-  const qualifiers: Qualifier[] = chosen.map((q, i) => ({
-    teamId: q.teamId,
-    seedRank: i + 1,
-    groupName: q.groupName,
-    groupPosition: q.groupPosition,
-  }));
-  return { qualifiers, bracketSize, groupCount };
+  const top2 = ranked.slice(0, 2).map((r) => r.teamId);
+  return {
+    format: 'FINAL',
+    qualifiers: mkQual(top2),
+    qualifierCount: top2.length,
+    byes: [],
+    firstStage: 'F',
+    firstPairings:
+      top2.length === 2 ? [{ slot: 0, teamAId: top2[0]!, teamBId: top2[1]! }] : [],
+  };
 }
 
 /** Ordem padrão de seeds numa chave (1,8,4,5,2,7,3,6 para 8). */
@@ -145,40 +167,6 @@ export function seedOrder(bracketSize: number): number[] {
     seeds = next;
   }
   return seeds;
-}
-
-/**
- * Pareamentos da 1ª fase do mata-mata. G=2 usa cruzamento (1ºA×2ºB, 1ºB×2ºA); demais usam
- * seeding padrão (1×B, 2×B-1, …) em ordem de chave (vencedores adjacentes se enfrentam depois).
- */
-export function firstRoundPairings(
-  qualifiers: Qualifier[],
-  bracketSize: number,
-  groupCount: number,
-): Pairing[] {
-  const byId = new Map(qualifiers.map((q) => [q.teamId, q]));
-  void byId;
-
-  if (groupCount === 2 && bracketSize === 4) {
-    const a1 = qualifiers.find((q) => q.groupPosition === 1 && q.seedRank === 1);
-    const b1 = qualifiers.find((q) => q.groupPosition === 1 && q.seedRank === 2);
-    const a2 = qualifiers.find((q) => q.groupPosition === 2 && q.seedRank === 3);
-    const b2 = qualifiers.find((q) => q.groupPosition === 2 && q.seedRank === 4);
-    const pairings: Pairing[] = [];
-    if (a1 && b2) pairings.push({ slot: 0, teamAId: a1.teamId, teamBId: b2.teamId });
-    if (b1 && a2) pairings.push({ slot: 1, teamAId: b1.teamId, teamBId: a2.teamId });
-    return pairings;
-  }
-
-  const bySeed = new Map(qualifiers.map((q) => [q.seedRank, q.teamId]));
-  const order = seedOrder(bracketSize); // posições de chave, tamanho = bracketSize
-  const pairings: Pairing[] = [];
-  for (let i = 0; i < order.length; i += 2) {
-    const a = bySeed.get(order[i]!);
-    const b = bySeed.get(order[i + 1]!);
-    if (a && b) pairings.push({ slot: i / 2, teamAId: a, teamBId: b });
-  }
-  return pairings;
 }
 
 /** Pareia os vencedores da fase concluída (em ordem de slot) para a próxima fase. */
