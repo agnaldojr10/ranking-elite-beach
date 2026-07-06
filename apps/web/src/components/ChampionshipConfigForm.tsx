@@ -118,6 +118,21 @@ export function ChampionshipConfigForm({
         </div>
       </fieldset>
 
+      {/* Participação — sempre editável (piso p/ quem fica fora da tabela) */}
+      <fieldset className="flex flex-col gap-3">
+        <legend className="mb-1 font-semibold">Pontos por participação</legend>
+        <label className="flex max-w-xs flex-col gap-1 text-sm">
+          Pontos a quem participou mas ficou fora da tabela
+          <input
+            name="participationPoints"
+            type="number"
+            min={0}
+            defaultValue={config.participationPoints}
+            className={field}
+          />
+        </label>
+      </fieldset>
+
       {/* Desempate — estrutural */}
       <fieldset className="flex flex-col gap-3" disabled={locked}>
         <legend className="mb-1 font-semibold">Critérios de desempate (ordem)</legend>

@@ -132,4 +132,12 @@ describe('pointsForPlacement (BR-30)', () => {
     expect(pointsForPlacement(DEFAULT_SCORING_TABLE, 1)).toBe(DEFAULT_SCORING_TABLE['1']);
     expect(pointsForPlacement(DEFAULT_SCORING_TABLE, 999)).toBe(0);
   });
+
+  it('aplica o piso de participação fora da tabela', () => {
+    const table = { '1': 100, '2': 70, '3': 50, '4': 30 };
+    expect(pointsForPlacement(table, 1, 10)).toBe(100); // colocado usa a tabela
+    expect(pointsForPlacement(table, 4, 10)).toBe(30);
+    expect(pointsForPlacement(table, 9, 10)).toBe(10); // fora da tabela = participação
+    expect(pointsForPlacement(table, 9)).toBe(0); // sem piso, mantém 0
+  });
 });

@@ -231,6 +231,7 @@ model Championship {
 model ChampionshipConfig {
   championshipId       String  @id @map("championship_id") @db.Uuid
   scoringTable         Json    @map("scoring_table")
+  participationPoints  Int     @default(0) @map("participation_points")
   tiebreakers          Json
   drawWeights          Json    @map("draw_weights")
   randomness           Int     @default(50)

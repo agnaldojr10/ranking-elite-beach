@@ -254,9 +254,16 @@ export function computeRoundPlacement(params: {
     .sort((a, b) => a.position - b.position);
 }
 
-/** Pontos de uma colocação via scoring_table (0 fora da tabela). */
-export function pointsForPlacement(scoringTable: ScoringTable, position: number): number {
-  return scoringTable[String(position)] ?? 0;
+/**
+ * Pontos de uma colocação via scoring_table. Fora da tabela, cai no piso de
+ * participação (default 0) — permite "X pontos só por participar".
+ */
+export function pointsForPlacement(
+  scoringTable: ScoringTable,
+  position: number,
+  participationPoints = 0,
+): number {
+  return scoringTable[String(position)] ?? participationPoints;
 }
 
 // ---------------------------------------------------------------------------

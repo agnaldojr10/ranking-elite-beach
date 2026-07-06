@@ -50,6 +50,8 @@ export type FinalConfig = z.infer<typeof FinalConfigSchema>;
 
 export const ChampionshipConfigSchema = z.object({
   scoringTable: ScoringTableSchema,
+  // Pontos dados a quem participou mas ficou fora da tabela de colocação (piso).
+  participationPoints: z.number().int().nonnegative().default(0),
   tiebreakers: z.array(TiebreakerSchema).min(1),
   drawWeights: DrawWeightsSchema,
   randomness: z.number().int().min(0).max(100),
@@ -95,6 +97,7 @@ export const DEFAULT_FINAL_CONFIG: FinalConfig = {
 
 export const DEFAULT_CHAMPIONSHIP_CONFIG: ChampionshipConfig = {
   scoringTable: DEFAULT_SCORING_TABLE,
+  participationPoints: 0,
   tiebreakers: DEFAULT_TIEBREAKERS,
   drawWeights: DEFAULT_DRAW_WEIGHTS,
   randomness: 50,
