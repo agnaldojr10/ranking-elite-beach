@@ -80,6 +80,16 @@ export class RoundsController {
     return this.rounds.updateBasics(user.clubId, id, dto);
   }
 
+  @Delete('rounds/:id')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN', 'ORGANIZER')
+  removeRound(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ): Promise<{ ok: true }> {
+    return this.rounds.remove(user.clubId, id);
+  }
+
   @Patch('rounds/:id/status')
   @UseGuards(RolesGuard)
   @Roles('ADMIN', 'ORGANIZER')

@@ -21,6 +21,11 @@ import {
 } from '@reb/contracts';
 import { Prisma } from '@reb/db';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  HistoryService,
+  opponentPairsFromMatches,
+  partnerPairsFromTeams,
+} from './history.service';
 
 /** Inclui a inscrição com os dados do jogador usados no DTO de resposta. */
 const registrationInclude = {
@@ -31,7 +36,71 @@ const registrationInclude = {
 
 @Injectable()
 export class RoundsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly history: HistoryService,
+  ) {}
+
+  /**
+   * Exclui a rodada e tudo dela (inscrições, sorteio, duplas, jogos, resultados),
+   * em ordem segura de FK. Reverte o histórico de parceria/adversário apenas se
+   * houve sorteio REAL (seed ≠ 'manual'); rodadas por classificação não somaram
+   * histórico, então não revertem.
+   */
+  async remove(clubId: string, roundId: string): Promise<{ ok: true }> {
+    const round = await this.prisma.round.findFirst({
+      where: { id: roundId, championship: { season: { clubId } } },
+      select: { id: true, kind: true },
+    });
+    if (!round) throw this.notFound();
+
+    const draw = await this.prisma.draw.findFirst({
+      where: { roundId },
+      select: { seed: true },
+    });
+    const teams = await this.prisma.team.findMany({
+      where: { roundId },
+      select: { id: true, players: { select: { playerId: true } } },
+    });
+    const shouldRevert =
+      round.kind !== 'FINAL_PHASE' && !!draw && draw.seed !== 'manual' && teams.length > 0;
+
+    const teamPlayers = new Map<string, [string, string]>(
+      teams
+        .filter((t) => t.players.length === 2)
+        .map((t) => [t.id, [t.players[0]!.playerId, t.players[1]!.playerId]] as const),
+    );
+    const matches = shouldRevert
+      ? await this.prisma.match.findMany({
+          where: { OR: [{ roundId }, { group: { roundId } }] },
+          select: { teamAId: true, teamBId: true },
+        })
+      : [];
+
+    await this.prisma.$transaction(async (tx) => {
+      if (shouldRevert) {
+        await this.history.applyDrawDeltas(
+          tx,
+          clubId,
+          roundId,
+          partnerPairsFromTeams([...teamPlayers.values()].map((players) => ({ players }))),
+          opponentPairsFromMatches(matches, teamPlayers),
+          -1,
+        );
+      }
+      await tx.matchResultLog.deleteMany({ where: { match: { OR: [{ roundId }, { group: { roundId } }] } } });
+      await tx.match.deleteMany({ where: { OR: [{ roundId }, { group: { roundId } }] } });
+      await tx.roundResult.deleteMany({ where: { roundId } });
+      await tx.groupTeam.deleteMany({ where: { group: { roundId } } });
+      await tx.group.deleteMany({ where: { roundId } });
+      await tx.teamPlayer.deleteMany({ where: { team: { roundId } } });
+      await tx.team.deleteMany({ where: { roundId } });
+      await tx.draw.deleteMany({ where: { roundId } });
+      await tx.registration.deleteMany({ where: { roundId } });
+      await tx.round.delete({ where: { id: roundId } });
+    });
+    return { ok: true };
+  }
 
   async list(clubId: string, championshipId: string): Promise<RoundDto[]> {
     await this.ensureChampionship(clubId, championshipId);

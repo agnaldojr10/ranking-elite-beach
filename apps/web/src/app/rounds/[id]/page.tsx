@@ -11,6 +11,7 @@ import {
 } from '@reb/contracts';
 import { Avatar } from '@/components/Avatar';
 import { AddRegistrationForm } from '@/components/AddRegistrationForm';
+import { DeleteRoundButton } from '@/components/DeleteRoundButton';
 import { AppShell } from '@/components/ui/AppShell';
 import { Tile } from '@/components/ui/Tile';
 import { Badge } from '@/components/ui/Badge';
@@ -32,9 +33,16 @@ const STATUS_TONE: Record<RegistrationStatus, 'ok' | 'warn' | 'neutral' | 'info'
   WAITLIST: 'info',
 };
 
-export default async function RoundDetailPage({ params }: { params: { id: string } }) {
+export default async function RoundDetailPage({
+  params,
+  searchParams,
+}: {
+  params: { id: string };
+  searchParams?: { erro?: string };
+}) {
   const round = await getRound(params.id);
   if (!round) notFound();
+  const erro = searchParams?.erro;
 
   const registrations = round.registrations ?? [];
   const registeredIds = new Set(registrations.map((r) => r.player.id));
@@ -110,8 +118,20 @@ export default async function RoundDetailPage({ params }: { params: { id: string
                 <Button variant="secondary">Fechar inscrições</Button>
               </form>
             )}
+            <ButtonLink href={`/rounds/${round.id}/edit`} variant="ghost">
+              Editar
+            </ButtonLink>
+            <DeleteRoundButton roundId={round.id} championshipId={round.championshipId} />
           </div>
         </Tile>
+
+        {erro && (
+          <Tile className="border-danger/40 bg-danger/5">
+            <p role="alert" className="text-sm text-danger">
+              Não foi possível excluir a rodada: {erro}
+            </p>
+          </Tile>
+        )}
 
         {/* Prontidão */}
         <Tile
