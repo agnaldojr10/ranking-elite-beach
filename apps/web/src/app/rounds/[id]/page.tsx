@@ -95,6 +95,11 @@ export default async function RoundDetailPage({ params }: { params: { id: string
                 Simular sorteio
               </span>
             )}
+            {!hasDraw && round.status !== 'FINISHED' && (
+              <ButtonLink href={`/rounds/${round.id}/classification`} variant="secondary">
+                Lançar classificação
+              </ButtonLink>
+            )}
             {isScheduled && (
               <form action={open}>
                 <Button variant="secondary">Abrir inscrições</Button>

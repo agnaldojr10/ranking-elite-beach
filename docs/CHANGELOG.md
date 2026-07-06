@@ -4,6 +4,14 @@
 
 ---
 
+## [0.23.0] — 2026-07-06 — Lançamento por classificação (fallback) + final = top 12
+**Descrição:** Ferramenta de **fallback** para lançar uma rodada só pela **classificação** (sem sorteio/placares) e ajuste da **rodada final para os 12 primeiros do ranking**. O caminho semanal principal segue sendo o fluxo completo (sorteio → placares → mata-mata → finalização), que já produz os pontos certos com a config de participação.
+**Adicionado/alterado:**
+- **Backend:** `RecordClassificationSchema` + helper puro `buildClassificationTeams` (`packages/contracts/src/round.ts`); `RoundsService.recordClassification` (transacional: registrações + Draw sintético + duplas do pódio/participação + `RoundResult` via `pointsForPlacement` + FINISHED); `POST /rounds/:id/classification` (ADMIN/ORGANIZER; `409 RESULTS_EXIST`/`ROUND_FINISHED`).
+- **Frontend:** rota `/rounds/[id]/classification` + `ClassificationForm` (multi-seleção de participantes/espera + pódio) + `saveClassificationAction`; botão "Lançar classificação" no detalhe da rodada.
+- **Final = top 12:** `qualifiersCount` do "Ranking Elite Beach Tennis" → **12** (seed + banco). A Fase Final já classifica `qualifiersCount` primeiros do ranking; a UI passa a exibir "os 12 melhores".
+**Validado (dev):** fluxo COMPLETO de uma rodada demo (12 atletas, sorteio→placares→mata-mata) finaliza com pontos **1º=100 · 2º=70 · 3º=50 · 4º=30 · participação=10**; endpoint de classificação (201/FINISHED/409); rodadas demo descartadas → ranking real intacto (só rodada 1). **125 testes.** Sem migration.
+
 ## [0.22.0] — 2026-07-06 — Go-live com dados reais + pontos de participação
 **Descrição:** Início do campeonato real "Ranking Elite Beach Tennis" no sistema: dados de teste removidos, 18 atletas + 1ª rodada (02/07/2026) populados a partir da **classificação/pontos** (sem placares), pontuação por **participação** e convites de auto-cadastro.
 **Adicionado/alterado:**

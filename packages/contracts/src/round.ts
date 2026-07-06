@@ -132,6 +132,69 @@ export const UpdateRegistrationSchema = z
 export type UpdateRegistration = z.infer<typeof UpdateRegistrationSchema>;
 
 // ---------------------------------------------------------------------------
+// Lançamento por classificação (fallback sem sorteio/placares)
+// ---------------------------------------------------------------------------
+
+/**
+ * Lança uma rodada informando só a CLASSIFICAÇÃO: os participantes (18 + espera)
+ * e as duplas do pódio na ordem (campeão, vice, 3º, 4º). Os demais participantes
+ * recebem participação. Usado quando não há placares (ex.: rodada já jogada fora do app).
+ */
+export const RecordClassificationSchema = z
+  .object({
+    participantIds: z.array(z.string().uuid()).min(2, 'Marque ao menos 2 participantes'),
+    waitlistIds: z.array(z.string().uuid()).default([]),
+    podium: z
+      .array(z.object({ playerIds: z.tuple([z.string().uuid(), z.string().uuid()]) }))
+      .max(4, 'No máximo 4 duplas no pódio (campeão, vice, 3º, 4º)')
+      .default([]),
+  })
+  .superRefine((v, ctx) => {
+    const podiumIds = v.podium.flatMap((p) => p.playerIds);
+    const seen = new Set<string>();
+    for (const id of [...v.participantIds, ...v.waitlistIds]) {
+      if (seen.has(id)) ctx.addIssue({ code: 'custom', message: 'Jogador repetido na lista' });
+      seen.add(id);
+    }
+    const pods = new Set<string>();
+    for (const id of podiumIds) {
+      if (pods.has(id)) ctx.addIssue({ code: 'custom', message: 'Jogador repetido no pódio' });
+      pods.add(id);
+      if (!v.participantIds.includes(id))
+        ctx.addIssue({ code: 'custom', message: 'Jogador do pódio deve estar entre os participantes' });
+    }
+  });
+export type RecordClassification = z.infer<typeof RecordClassificationSchema>;
+
+/** Uma dupla resultante do lançamento, com sua colocação (1 = campeão). */
+export type ClassificationTeam = { playerIds: string[]; position: number };
+
+/**
+ * Monta as duplas a partir do pódio + participantes. Pódio nas posições 1..k
+ * (na ordem informada); os demais participantes são pareados na sequência
+ * (sobra ímpar vira dupla de 1) nas posições seguintes. Função pura/testável.
+ */
+export function buildClassificationTeams(
+  participantIds: string[],
+  podium: { playerIds: [string, string] }[],
+): ClassificationTeam[] {
+  const teams: ClassificationTeam[] = [];
+  const used = new Set<string>();
+  podium.forEach((p, i) => {
+    teams.push({ playerIds: [...p.playerIds], position: i + 1 });
+    p.playerIds.forEach((id) => used.add(id));
+  });
+  const rest = participantIds.filter((id) => !used.has(id));
+  let position = podium.length + 1;
+  for (let i = 0; i < rest.length; i += 2) {
+    const pair = rest.slice(i, i + 2);
+    teams.push({ playerIds: pair, position });
+    position += 1;
+  }
+  return teams;
+}
+
+// ---------------------------------------------------------------------------
 // Schemas de resposta
 // ---------------------------------------------------------------------------
 

@@ -4,6 +4,7 @@ import {
   ConfirmDrawSchema,
   CreateRegistrationSchema,
   CreateRoundSchema,
+  RecordClassificationSchema,
   SimulateDrawSchema,
   UpdateRoundSchema,
   UpdateRoundStatusSchema,
@@ -13,6 +14,7 @@ import {
   type CreateRound,
   type DrawResult,
   type JwtPayload,
+  type RecordClassification,
   type Registration,
   type Round,
   type SimulateDraw,
@@ -85,6 +87,17 @@ export class RoundsController {
     @Body(new ZodValidationPipe(UpdateRoundStatusSchema)) dto: UpdateRoundStatus,
   ): Promise<Round> {
     return this.rounds.setStatus(user.clubId, id, dto.status);
+  }
+
+  @Post('rounds/:id/classification')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN', 'ORGANIZER')
+  recordClassification(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(RecordClassificationSchema)) dto: RecordClassification,
+  ): Promise<Round> {
+    return this.rounds.recordClassification(user.clubId, id, user.sub, dto);
   }
 
   @Post('rounds/:id/registrations')

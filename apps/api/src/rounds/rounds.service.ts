@@ -1,11 +1,16 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   DEFAULT_MATCH_FORMAT,
+  DEFAULT_SCORING_TABLE,
   MatchFormatSchema,
   RegistrationSchema,
+  ScoringTableSchema,
+  buildClassificationTeams,
   computeRoundReadiness,
+  pointsForPlacement,
   type CreateRound,
   type MatchFormat,
+  type RecordClassification,
   type Registration as RegistrationDto,
   type RegistrationStatus,
   type RegistrationSummary,
@@ -56,6 +61,94 @@ export class RoundsService {
     const summary = this.summarize(row.registrations.map((x) => x.status));
     const registrations: RegistrationDto[] = row.registrations.map((r) => this.toRegistrationDto(r));
     return this.toDto(row, summary, registrations);
+  }
+
+  /**
+   * Lança a rodada só pela classificação (fallback sem sorteio/placares): cria
+   * as duplas (pódio + participação), grava os pontos e finaliza a rodada.
+   */
+  async recordClassification(
+    clubId: string,
+    roundId: string,
+    userId: string,
+    dto: RecordClassification,
+  ): Promise<RoundDto> {
+    const round = await this.prisma.round.findFirst({
+      where: { id: roundId, championship: { season: { clubId } } },
+      select: { id: true, status: true },
+    });
+    if (!round) throw this.notFound();
+    if (round.status === 'FINISHED') {
+      throw new ConflictException({
+        error: { code: 'ROUND_FINISHED', message: 'Rodada já finalizada' },
+      });
+    }
+    const already = await this.prisma.roundResult.count({ where: { roundId } });
+    if (already > 0) {
+      throw new ConflictException({
+        error: { code: 'RESULTS_EXIST', message: 'Esta rodada já tem resultados lançados' },
+      });
+    }
+
+    const allIds = [...new Set([...dto.participantIds, ...dto.waitlistIds])];
+    const valid = await this.prisma.player.count({ where: { id: { in: allIds }, clubId } });
+    if (valid !== allIds.length) {
+      throw new ConflictException({
+        error: { code: 'PLAYER_INVALID', message: 'Há jogador inválido para este clube' },
+      });
+    }
+
+    const config = await this.prisma.championshipConfig.findFirst({
+      where: { championship: { rounds: { some: { id: roundId } } } },
+      select: { scoringTable: true, participationPoints: true },
+    });
+    const scoringTable = config ? ScoringTableSchema.parse(config.scoringTable) : DEFAULT_SCORING_TABLE;
+    const participationPoints = config?.participationPoints ?? 0;
+
+    const teams = buildClassificationTeams(dto.participantIds, dto.podium);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.registration.createMany({
+        data: [
+          ...dto.participantIds.map((playerId) => ({ roundId, playerId, status: 'CONFIRMED' as const })),
+          ...dto.waitlistIds.map((playerId) => ({ roundId, playerId, status: 'WAITLIST' as const })),
+        ],
+        skipDuplicates: true,
+      });
+      const draw = await tx.draw.create({
+        data: {
+          roundId,
+          seed: 'manual',
+          configSnapshot: {} as Prisma.InputJsonValue,
+          qualityScore: 0,
+          metrics: {} as Prisma.InputJsonValue,
+          explanations: ['Lançamento manual por classificação'] as unknown as Prisma.InputJsonValue,
+          createdById: userId,
+        },
+      });
+      for (const t of teams) {
+        const team = await tx.team.create({
+          data: {
+            roundId,
+            drawId: draw.id,
+            label: `Dupla ${t.position}`,
+            strength: 0,
+            players: { create: t.playerIds.map((playerId) => ({ playerId })) },
+          },
+        });
+        await tx.roundResult.create({
+          data: {
+            roundId,
+            teamId: team.id,
+            finalPosition: t.position,
+            pointsAwarded: pointsForPlacement(scoringTable, t.position, participationPoints),
+          },
+        });
+      }
+      await tx.round.update({ where: { id: roundId }, data: { status: 'FINISHED' } });
+    });
+
+    return this.get(clubId, roundId);
   }
 
   async create(clubId: string, championshipId: string, dto: CreateRound): Promise<RoundDto> {

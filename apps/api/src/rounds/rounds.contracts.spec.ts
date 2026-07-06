@@ -4,6 +4,8 @@ import {
   CreateRoundSchema,
   DEFAULT_MATCH_FORMAT,
   MatchFormatSchema,
+  RecordClassificationSchema,
+  buildClassificationTeams,
   computeRoundReadiness,
   describeRoundFormat,
   partitionGroups,
@@ -124,5 +126,42 @@ describe('describeRoundFormat (FORMATS.md)', () => {
     const f = describeRoundFormat(16);
     expect(f.bracketSize).toBe(8);
     expect(f.bracketLabel).toBe('Quartas de final');
+  });
+});
+
+describe('buildClassificationTeams (lançamento por classificação)', () => {
+  const P = (n: number) => `00000000-0000-0000-0000-0000000000${String(n).padStart(2, '0')}`;
+
+  it('pódio nas posições 1..k e restantes pareados a seguir', () => {
+    const participants = [P(1), P(2), P(3), P(4), P(5), P(6)];
+    const podium = [
+      { playerIds: [P(1), P(2)] as [string, string] },
+      { playerIds: [P(3), P(4)] as [string, string] },
+    ];
+    const teams = buildClassificationTeams(participants, podium);
+    expect(teams).toEqual([
+      { playerIds: [P(1), P(2)], position: 1 },
+      { playerIds: [P(3), P(4)], position: 2 },
+      { playerIds: [P(5), P(6)], position: 3 },
+    ]);
+  });
+
+  it('jogador do pódio não repete na participação; sobra ímpar vira dupla de 1', () => {
+    const participants = [P(1), P(2), P(3), P(4), P(5)];
+    const podium = [{ playerIds: [P(1), P(2)] as [string, string] }];
+    const teams = buildClassificationTeams(participants, podium);
+    expect(teams).toEqual([
+      { playerIds: [P(1), P(2)], position: 1 },
+      { playerIds: [P(3), P(4)], position: 2 },
+      { playerIds: [P(5)], position: 3 },
+    ]);
+  });
+
+  it('schema rejeita jogador do pódio fora dos participantes', () => {
+    const r = RecordClassificationSchema.safeParse({
+      participantIds: [P(1), P(2)],
+      podium: [{ playerIds: [P(1), P(9)] }],
+    });
+    expect(r.success).toBe(false);
   });
 });
