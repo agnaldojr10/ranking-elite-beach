@@ -4,6 +4,15 @@
 
 ---
 
+## [0.21.0] — 2026-07-05 — Imersão visual: marca Beach Tennis, fundo e loadings
+**Descrição:** Assets visuais imersivos com foco em **Beach Tennis** (SVG/CSS, sem raster, sem webfonts, tokens/dark mode intactos). Complementa o handoff do Design System (que validou o sistema atual; estes assets criativos não vinham no código).
+**Adicionado/alterado:**
+- **Marca** (raquete de praia + bola sobre onda): novo `BrandMark` (`apps/portal/src/components/ui/` e `apps/web/src/components/ui/`), theme-aware (`currentColor` + token coral).
+- **Ícones de app** redesenhados (mesma temática) — portal e web, normal + maskable (`public/icon.svg`, `public/icon-maskable.svg`, `apps/web/src/app/icon.svg`).
+- **Background praiano mais rico** no portal (`globals.css`): gradientes em camadas (oceano/coral/horizonte) + textura de grão sutil via SVG inline (`body::before`, `soft-light`), fixo e sem custo de imagem; contraste e `prefers-reduced-motion` preservados.
+- **Loading/splash com marca**: `apps/portal/src/app/loading.tsx` (BrandMark + halo `animate-ping` + "Meu Beach") e `apps/web/src/app/loading.tsx` (mark tokenizado). Login do portal passa a exibir a marca.
+**Migration:** nenhuma. **Contratos/API:** inalterados (sem mudança de backend; 121 testes intactos). Typecheck + builds verdes.
+
 ## [0.20.1] — 2026-07-05 — Fase 12 concluída (Portal do Jogador completo)
 **Aprovado:** fatia 3 (Push) validada pelo PO. As 3 fatias do Portal do Jogador estão no `main` → **épico e Fase 12 encerrados**. Épico entregue: fundação/auth por convite, Home, Perfil, Meus Torneios, H2H, Conquistas e Notificações push.
 

@@ -31,15 +31,33 @@ body {
   min-height: 100dvh;
   color: rgb(var(--c-ink));
   background-color: rgb(var(--c-bg));
-  /* Gradientes praianos suaves (oceano + coral) sobre fundo profundo. */
+  /* Atmosfera praiana em camadas (sol/oceano/coral + brilho de horizonte)
+     sobre fundo profundo. Fixo, não rola com o conteúdo. */
   background-image:
-    radial-gradient(1100px 600px at 15% -10%, rgb(var(--c-ocean) / 0.16), transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, rgb(var(--c-coral) / 0.10), transparent 55%),
-    linear-gradient(180deg, rgb(var(--c-bg-2)), rgb(var(--c-bg)) 40%);
+    radial-gradient(1200px 640px at 12% -12%, rgb(var(--c-ocean) / 0.22), transparent 60%),
+    radial-gradient(900px 520px at 108% 2%, rgb(var(--c-coral) / 0.14), transparent 55%),
+    radial-gradient(1400px 380px at 50% 116%, rgb(var(--c-ocean) / 0.12), transparent 60%),
+    linear-gradient(180deg, rgb(var(--c-bg-2)), rgb(var(--c-bg)) 42%);
   background-attachment: fixed;
   font-family: theme('fontFamily.sans');
   /* Safe-area (PWA em tela cheia). */
   padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+}
+
+/* Textura sutil (grão) + faixa de "horizonte" para dar profundidade, sem custo
+   de imagem raster. Fica atrás de todo o conteúdo e não captura toque. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    linear-gradient(180deg, transparent 54%, rgb(var(--c-ocean) / 0.05) 60%, transparent 66%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+  background-size: 100% 100%, 140px 140px;
+  opacity: 0.5;
+  mix-blend-mode: soft-light;
 }
 
 /* Evita zoom automático no iOS em campos < 16px. */
