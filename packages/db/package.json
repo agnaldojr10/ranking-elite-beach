@@ -17,6 +17,7 @@
     "reset:domain": "dotenv -e ../../.env -- tsx prisma/reset-domain.ts",
     "seed:real": "dotenv -e ../../.env -- tsx prisma/seed-real.ts",
     "gen:invites": "dotenv -e ../../.env -- tsx prisma/gen-invites.ts",
+    "gen:demo": "dotenv -e ../../.env -- tsx prisma/gen-demo-athlete.ts",
     "lint": "echo \"noop\" && exit 0",
     "typecheck": "tsc --noEmit",
     "build": "dotenv -e ../../.env -- prisma generate && tsc -p tsconfig.json",
