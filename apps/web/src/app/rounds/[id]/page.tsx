@@ -174,7 +174,8 @@ export default async function RoundDetailPage({
                   <strong className="text-ink">{format.groupCount}</strong> grupo(s) ({format.groups.join(', ')}).
                 </p>
                 <p className="mt-1">
-                  Fase inicial: <strong className="text-ink">{format.bracketLabel}</strong> (chave de {format.bracketSize}).
+                  <strong className="text-ink">{format.qualifiers}</strong> classificados — fase inicial:{' '}
+                  <strong className="text-ink">{format.bracketLabel}</strong>.
                 </p>
                 <p className="mt-1 text-muted">{format.qualificationRule}</p>
               </div>

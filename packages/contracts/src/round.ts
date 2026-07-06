@@ -336,13 +336,6 @@ export const RoundFormatSchema = z.object({
 });
 export type RoundFormat = z.infer<typeof RoundFormatSchema>;
 
-/** Menor potência de 2 maior ou igual a n. */
-function nextPowerOfTwo(n: number): number {
-  let p = 1;
-  while (p < n) p *= 2;
-  return p;
-}
-
 /**
  * Particiona D duplas em grupos, preferindo `pref` (3 por padrão) e absorvendo sobras
  * com o outro tamanho (BR-23 / FORMATS.md). Caso especial: D==5 → um único grupo de 5.
@@ -367,61 +360,58 @@ export function partitionGroups(teams: number, pref = 3): number[] {
 }
 
 /**
- * Deriva o formato da rodada (grupos + chave + classificação) a partir do nº de duplas.
- * Espelha a matriz determinística de FORMATS.md. Somente leitura/prévia — o sorteio (Sprint 5)
- * é quem forma as duplas e os grupos de fato.
+ * Deriva o formato da rodada (grupos + classificação) a partir do nº de duplas.
+ * Classificação flexível e automática (Fase 14), espelhando `planKnockout`:
+ *   • ≥6 duplas → 6 classificados: as 2 melhores vão direto à semifinal (bye) e
+ *     a 3ª–6ª disputam as quartas (2 vagas); depois Final + disputa de 3º.
+ *   • 4–5 duplas → 4 classificados: semifinal direta (1×4, 2×3) → Final + 3º.
+ *   • 2–3 duplas → 2 classificados: Final direta.
+ * O ranqueamento dos classificados é GLOBAL (vitórias → saldo), não por grupo.
+ * Somente leitura/prévia — o sorteio é quem forma as duplas e os grupos de fato.
  */
 export function describeRoundFormat(teams: number, groupSizePref = 3): RoundFormat {
   const groups = partitionGroups(teams, groupSizePref);
   const groupCount = groups.length;
 
-  if (groupCount <= 1) {
-    // G=1 (8/10 jogadores): os 2 primeiros do grupo fazem a Final (BR-23b).
+  if (teams >= 6) {
     return {
       teams,
       groups,
       groupCount,
-      bracketSize: 2,
-      bracketLabel: BRACKET_LABELS[2] ?? 'Final',
-      groupWinners: teams >= 2 ? 2 : teams,
-      bestRunnersUp: 0,
-      qualifiers: Math.min(2, teams),
-      qualificationRule: 'Os 2 primeiros do grupo fazem a Final.',
+      bracketSize: 6,
+      bracketLabel: BRACKET_LABELS[8] ?? 'Quartas de final',
+      groupWinners: groupCount,
+      bestRunnersUp: Math.max(0, 6 - groupCount),
+      qualifiers: 6,
+      qualificationRule:
+        'As 6 melhores duplas (ranking geral por vitórias e saldo) avançam: a 1ª e a 2ª vão direto à semifinal; a 3ª à 6ª disputam as quartas por 2 vagas (evitando revanche de grupo). Depois Final + disputa de 3º.',
     };
   }
 
-  if (groupCount === 2) {
-    // G=2 (12/14/16): top-2 de cada grupo → Semifinal de 4 (BR-23b).
+  if (teams >= 4) {
     return {
       teams,
       groups,
       groupCount,
       bracketSize: 4,
       bracketLabel: BRACKET_LABELS[4] ?? 'Semifinal',
-      groupWinners: 4,
+      groupWinners: Math.min(4, teams),
       bestRunnersUp: 0,
       qualifiers: 4,
-      qualificationRule: 'Top-2 de cada grupo (Semifinal: 1ºA×2ºB e 1ºB×2ºA).',
+      qualificationRule:
+        'As 4 melhores duplas (ranking geral) fazem a semifinal (1×4, 2×3). Depois Final + disputa de 3º.',
     };
   }
-
-  // G>=3: vencedores de grupo + melhores 2ºs até fechar a chave de potência de 2 (BR-23a).
-  const bracketSize = nextPowerOfTwo(groupCount);
-  const bestRunnersUp = bracketSize - groupCount;
-  const runnersLabel =
-    bestRunnersUp === 0
-      ? `${groupCount} vencedores de grupo`
-      : `${groupCount} vencedores + ${bestRunnersUp} melhor${bestRunnersUp > 1 ? 'es' : ''} 2º${bestRunnersUp > 1 ? 's' : ''} colocado${bestRunnersUp > 1 ? 's' : ''}`;
 
   return {
     teams,
     groups,
     groupCount,
-    bracketSize,
-    bracketLabel: BRACKET_LABELS[bracketSize] ?? `Chave de ${bracketSize}`,
-    groupWinners: groupCount,
-    bestRunnersUp,
-    qualifiers: bracketSize,
-    qualificationRule: `Classificam-se ${runnersLabel} até completar a ${BRACKET_LABELS[bracketSize] ?? `chave de ${bracketSize}`}.`,
+    bracketSize: 2,
+    bracketLabel: BRACKET_LABELS[2] ?? 'Final',
+    groupWinners: Math.min(2, teams),
+    bestRunnersUp: 0,
+    qualifiers: Math.min(2, teams),
+    qualificationRule: 'As 2 melhores duplas fazem a Final.',
   };
 }

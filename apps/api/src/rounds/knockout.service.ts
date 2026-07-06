@@ -4,11 +4,9 @@ import {
   ScoringTableSchema,
   computeGroupStandings,
   computeRoundPlacement,
-  firstRoundPairings,
   nextStagePairings,
+  planKnockout,
   pointsForPlacement,
-  selectQualifiers,
-  stageCode,
   STAGE_LABELS,
   type GroupStandings,
   type KnockoutOutcome,
@@ -23,7 +21,6 @@ import type { Prisma } from '@reb/db';
 import { PrismaService } from '../prisma/prisma.service';
 
 type TeamRef = { id: string; label: string; playerNames: [string, string] };
-const STAGE_TEAMS: Record<string, number> = { R32: 32, R16: 16, QF: 8, SF: 4, F: 2 };
 
 @Injectable()
 export class KnockoutService {
@@ -58,11 +55,9 @@ export class KnockoutService {
     }
 
     const standings = await this.loadStandings(roundId);
-    const { qualifiers, bracketSize, groupCount } = selectQualifiers(standings);
-    const pairings = firstRoundPairings(qualifiers, bracketSize, groupCount);
-    const stage = stageCode(bracketSize);
+    const plan = planKnockout(standings);
 
-    await this.createStage(round.id, stage, pairings);
+    await this.createStage(round.id, plan.firstStage, plan.firstPairings);
     void round;
     return this.getKnockout(clubId, roundId);
   }
@@ -86,6 +81,20 @@ export class KnockoutService {
     const loserOf = (m: { teamAId: string; teamBId: string; winnerTeamId: string | null }) =>
       m.winnerTeamId === m.teamAId ? m.teamBId : m.teamAId;
 
+    // Quartas (repescagem com byes) concluídas → Semifinal: cada bye enfrenta o
+    // vencedor da sua chave (slot 0 → bye seed1; slot 1 → bye seed2).
+    if (stages.has('QF') && complete('QF') && !stages.has('SF')) {
+      const plan = planKnockout(await this.loadStandings(roundId));
+      const qf = inStage('QF');
+      if (plan.format === 'QUARTER_WITH_BYES' && qf.length === 2 && plan.byes.length === 2) {
+        await this.createStage(roundId, 'SF', [
+          { slot: 0, teamAId: plan.byes[0]!, teamBId: qf[0]!.winnerTeamId! },
+          { slot: 1, teamAId: plan.byes[1]!, teamBId: qf[1]!.winnerTeamId! },
+        ]);
+        return;
+      }
+    }
+
     // Semifinal concluída → Final (vencedores) + disputa de 3º (perdedores).
     if (complete('SF') && !stages.has('F')) {
       const sf = inStage('SF');
@@ -98,18 +107,6 @@ export class KnockoutService {
       return;
     }
 
-    // Fases anteriores à semifinal concluídas → próxima fase.
-    for (const stage of ['R32', 'R16', 'QF']) {
-      if (!complete(stage)) continue;
-      const nextTeams = STAGE_TEAMS[stage]! / 2;
-      const next = stageCode(nextTeams);
-      if (!stages.has(next)) {
-        const winners = inStage(stage).map((m) => m.winnerTeamId!);
-        await this.createStage(roundId, next, nextStagePairings(winners));
-        return;
-      }
-    }
-
     // Final (e 3º, se existir) concluída → finaliza a rodada.
     const finalDone = complete('F');
     const thirdPending = stages.has('3P') && !complete('3P');
@@ -120,17 +117,17 @@ export class KnockoutService {
 
   async getKnockout(clubId: string, roundId: string): Promise<KnockoutView> {
     await this.ensureRound(clubId, roundId, false);
-    const [matches, groupCount, teamMap] = await Promise.all([
+    const [matches, standings, teamMap] = await Promise.all([
       this.prisma.match.findMany({
         where: { phase: 'KNOCKOUT', roundId },
         orderBy: [{ stage: 'asc' }, { slot: 'asc' }],
         include: { venue: { select: { name: true } } },
       }),
-      this.prisma.group.count({ where: { roundId } }),
+      this.loadStandings(roundId),
       this.teamMap(roundId),
     ]);
 
-    const bracketSize = groupCount <= 1 ? 2 : groupCount === 2 ? 4 : nextPow2(groupCount);
+    const bracketSize = planKnockout(standings).qualifierCount;
     return {
       bracketSize,
       generated: matches.length > 0,
@@ -177,7 +174,7 @@ export class KnockoutService {
     if (already > 0) return;
 
     const standings = await this.loadStandings(roundId);
-    const { bracketSize } = selectQualifiers(standings);
+    const bracketSize = planKnockout(standings).qualifierCount;
 
     const koMatches = await this.prisma.match.findMany({
       where: { phase: 'KNOCKOUT', roundId, winnerTeamId: { not: null } },
@@ -297,10 +294,4 @@ export class KnockoutService {
     }
     return map;
   }
-}
-
-function nextPow2(n: number): number {
-  let p = 1;
-  while (p < n) p *= 2;
-  return p;
 }
