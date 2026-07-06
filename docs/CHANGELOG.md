@@ -4,6 +4,14 @@
 
 ---
 
+## [0.24.0] — 2026-07-06 — Duplas reais da rodada 1 + inscrição em lote (Fatia 1)
+**Descrição:** Ajustes pós-teste (fatia 1 de 3). Sem migration.
+**Adicionado/alterado:**
+- **Duplas reais da rodada 1** + **histórico de parceria**: `seed-real.ts` agora usa as 9 duplas reais (Éberson+Yan, Luis Carlos+Mateus, Fabiano+Lucas, Gean+Igor, Godoy+Bruno Pedro, Bruno Vilela+Gustavo, Mateus Cardoso+Junior Minuci, Sérgio Xingu+Rafael, Rafael Junior+João Alfonso) e grava `PartnerHistory` (pontos inalterados). Script one-off `fix-round1-pairs.ts` (`fix:round1`) corrige o banco já populado. **Efeito:** o sorteio das próximas rodadas evita repetir essas duplas (validado: rodada 2 simulada não repetiu nenhuma).
+- **Inscrição em lote:** `BulkCreateRegistrationSchema`; `RegistrationsService.createMany` (valida clube/ativo, dedupe via `skipDuplicates`); `POST /rounds/:id/registrations/bulk`. UI: `AddRegistrationForm` vira **multi-seleção** (checklist com busca + "Inscrever selecionados").
+**Verificado:** typecheck + 125 testes; bulk (18 de uma vez) e sorteio da rodada 2 sem repetir duplas.
+**Próximo:** Fatia 2 (classificação do mata-mata flexível) e Fatia 3 (portal opera rodada + relatório WhatsApp).
+
 ## [0.23.0] — 2026-07-06 — Lançamento por classificação (fallback) + final = top 12
 **Descrição:** Ferramenta de **fallback** para lançar uma rodada só pela **classificação** (sem sorteio/placares) e ajuste da **rodada final para os 12 primeiros do ranking**. O caminho semanal principal segue sendo o fluxo completo (sorteio → placares → mata-mata → finalização), que já produz os pontos certos com a config de participação.
 **Adicionado/alterado:**

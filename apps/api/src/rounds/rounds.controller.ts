@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
+  BulkCreateRegistrationSchema,
   ConfirmDrawSchema,
   CreateRegistrationSchema,
   CreateRoundSchema,
@@ -8,6 +9,7 @@ import {
   SimulateDrawSchema,
   UpdateRoundSchema,
   UpdateRoundStatusSchema,
+  type BulkCreateRegistration,
   type ConfirmDraw,
   type ConfirmedDraw,
   type CreateRegistration,
@@ -109,6 +111,17 @@ export class RoundsController {
     @Body(new ZodValidationPipe(CreateRegistrationSchema)) dto: CreateRegistration,
   ): Promise<Registration> {
     return this.registrations.create(user.clubId, id, dto);
+  }
+
+  @Post('rounds/:id/registrations/bulk')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN', 'ORGANIZER')
+  registerBulk(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(BulkCreateRegistrationSchema)) dto: BulkCreateRegistration,
+  ): Promise<{ added: number }> {
+    return this.registrations.createMany(user.clubId, id, dto);
   }
 
   @Post('rounds/:id/draw/simulate')

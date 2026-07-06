@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import {
+  BulkCreateRegistrationSchema,
   CreateRegistrationSchema,
   CreateRoundSchema,
   RecordClassificationSchema,
@@ -13,6 +14,24 @@ import {
 import { apiFetch } from '@/lib/api';
 
 export type FormState = { ok?: boolean; error?: string };
+
+/** Inscreve vários jogadores de uma vez (multi-seleção). */
+export async function createRegistrationsBulkAction(
+  roundId: string,
+  payload: unknown,
+): Promise<FormState & { added?: number }> {
+  const parsed = BulkCreateRegistrationSchema.safeParse(payload);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Seleção inválida' };
+  }
+  const res = await apiFetch<{ added: number }>(`/rounds/${roundId}/registrations/bulk`, {
+    method: 'POST',
+    body: JSON.stringify(parsed.data),
+  });
+  if (!res.ok) return { error: res.message };
+  revalidatePath(`/rounds/${roundId}`);
+  return { ok: true, added: res.data?.added ?? 0 };
+}
 
 /** Lança a rodada só por classificação (participantes + duplas do pódio). */
 export async function saveClassificationAction(
