@@ -75,6 +75,7 @@ export async function updateConfigAction(
       opponent: Number(formData.get('w_opponent') ?? 0),
     },
     randomness: Number(formData.get('randomness') ?? 50),
+    participationPoints: Number(formData.get('participationPoints') ?? 0),
     allowRepeatPartners: formData.get('allowRepeatPartners') === 'on',
     allowRepeatOpponents: formData.get('allowRepeatOpponents') === 'on',
   };

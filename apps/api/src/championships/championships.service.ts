@@ -58,6 +58,7 @@ export class ChampionshipsService {
         config: {
           create: {
             scoringTable: config.scoringTable,
+            participationPoints: config.participationPoints,
             tiebreakers: config.tiebreakers,
             drawWeights: config.drawWeights,
             randomness: config.randomness,
@@ -99,6 +100,7 @@ export class ChampionshipsService {
 
     const data: Prisma.ChampionshipConfigUpdateInput = {};
     if (dto.scoringTable !== undefined) data.scoringTable = dto.scoringTable;
+    if (dto.participationPoints !== undefined) data.participationPoints = dto.participationPoints;
     if (dto.tiebreakers !== undefined) data.tiebreakers = dto.tiebreakers;
     if (dto.drawWeights !== undefined) data.drawWeights = dto.drawWeights;
     if (dto.randomness !== undefined) data.randomness = dto.randomness;
@@ -181,6 +183,7 @@ export class ChampionshipsService {
     if (!partial) return base;
     return {
       scoringTable: partial.scoringTable ?? base.scoringTable,
+      participationPoints: partial.participationPoints ?? base.participationPoints,
       tiebreakers: partial.tiebreakers ?? base.tiebreakers,
       drawWeights: { ...base.drawWeights, ...(partial.drawWeights ?? {}) },
       randomness: partial.randomness ?? base.randomness,
@@ -201,6 +204,7 @@ export class ChampionshipsService {
     createdAt: Date;
     config: {
       scoringTable: Prisma.JsonValue;
+      participationPoints: number;
       tiebreakers: Prisma.JsonValue;
       drawWeights: Prisma.JsonValue;
       randomness: number;
@@ -212,6 +216,7 @@ export class ChampionshipsService {
     const config = row.config
       ? ChampionshipConfigSchema.parse({
           scoringTable: row.config.scoringTable,
+          participationPoints: row.config.participationPoints,
           tiebreakers: row.config.tiebreakers,
           drawWeights: row.config.drawWeights,
           randomness: row.config.randomness,

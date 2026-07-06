@@ -193,11 +193,12 @@ export class KnockoutService {
 
     const config = await this.prisma.championshipConfig.findFirst({
       where: { championship: { rounds: { some: { id: roundId } } } },
-      select: { scoringTable: true },
+      select: { scoringTable: true, participationPoints: true },
     });
     const scoringTable = config
       ? ScoringTableSchema.parse(config.scoringTable)
       : DEFAULT_SCORING_TABLE;
+    const participationPoints = config?.participationPoints ?? 0;
 
     await this.prisma.$transaction(async (tx) => {
       for (const p of placement) {
@@ -206,7 +207,7 @@ export class KnockoutService {
             roundId,
             teamId: p.teamId,
             finalPosition: p.position,
-            pointsAwarded: pointsForPlacement(scoringTable, p.position),
+            pointsAwarded: pointsForPlacement(scoringTable, p.position, participationPoints),
           },
         });
       }

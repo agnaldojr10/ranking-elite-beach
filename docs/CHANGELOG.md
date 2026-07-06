@@ -4,6 +4,15 @@
 
 ---
 
+## [0.22.0] — 2026-07-06 — Go-live com dados reais + pontos de participação
+**Descrição:** Início do campeonato real "Ranking Elite Beach Tennis" no sistema: dados de teste removidos, 18 atletas + 1ª rodada (02/07/2026) populados a partir da **classificação/pontos** (sem placares), pontuação por **participação** e convites de auto-cadastro.
+**Adicionado/alterado:**
+- **Pontos por participação** (config): `ChampionshipConfig.participationPoints` (contrato + coluna `participation_points`, default 0). `pointsForPlacement(scoringTable, position, participationPoints)` usa como **piso** fora da tabela; `finalize` (knockout) passa o valor da config. Form/serviço de config do backoffice expõem o campo (sempre editável).
+- **Scripts de dados** (`packages/db/prisma/`): `reset-domain.ts` (limpa domínio, mantém Club+admin), `seed-real.ts` (Temporada 2026, campeonato ATIVO com `scoringTable {1:100,2:70,3:50,4:30}` + participação 10, 18 atletas, rodada 1 FINISHED com `RoundResult` de cada dupla — sem Match/histórico), `gen-invites.ts` (convite por atleta, código+SHA-256, imprime para envio). Scripts `reset:domain`/`seed:real`/`gen:invites`.
+- **Migration:** `participation_points`.
+**Verificado:** ranking do campeonato = planilha (Éberson/Yan 100 · Luis Carlos/Mateus 70 · Fabiano/Lucas 50 · Gean/Igor 30 · demais 10); claim de convite real → atleta vê seus números. 122 testes.
+**Próximo:** fatia B — tela semanal "só classificação" (18 participantes + espera; podium → pontos).
+
 ## [0.21.0] — 2026-07-05 — Imersão visual: marca Beach Tennis, fundo e loadings
 **Descrição:** Assets visuais imersivos com foco em **Beach Tennis** (SVG/CSS, sem raster, sem webfonts, tokens/dark mode intactos). Complementa o handoff do Design System (que validou o sistema atual; estes assets criativos não vinham no código).
 **Adicionado/alterado:**
