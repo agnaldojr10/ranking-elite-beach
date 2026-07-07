@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { BeachTennisLoader } from '@/components/ui/BeachTennisLoader';
 
 export function LoginForm() {
   const router = useRouter();
@@ -35,7 +36,13 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <>
+      {loading && (
+        <div className="fixed inset-0 z-50" style={{ background: 'rgb(var(--c-surface))' }}>
+          <BeachTennisLoader />
+        </div>
+      )}
+      <form onSubmit={onSubmit} className="space-y-4">
       <div>
         <label className="mb-1 block text-sm font-medium text-ink-2">E-mail</label>
         <input
@@ -86,6 +93,7 @@ export function LoginForm() {
           Ativar conta com convite
         </Link>
       </p>
-    </form>
+      </form>
+    </>
   );
 }
