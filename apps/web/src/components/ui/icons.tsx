@@ -29,6 +29,13 @@ export const IconUsers = (p: IconProps) => (
     <path d="M22 19v-1a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
   </Base>
 );
+
+export const IconShield = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3Z" />
+    <path d="M9.5 12l1.8 1.8L15 10" />
+  </Base>
+);
 export const IconTrophy = (p: IconProps) => (
   <Base {...p}>
     <path d="M6 9a6 6 0 0 0 12 0V4H6z" />

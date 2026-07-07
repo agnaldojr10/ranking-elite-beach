@@ -19,6 +19,7 @@ import {
   IconCourt,
   IconHelp,
   IconLayers,
+  IconShield,
   IconTrophy,
   IconUsers,
   IconWhistle,
@@ -32,6 +33,14 @@ const NAV = [
   { href: '/calendar', title: 'Agenda', hint: 'Rodadas e treinos', icon: IconCalendar },
   { href: '/help', title: 'Como funciona', hint: 'Guia do administrador', icon: IconHelp },
 ];
+
+// Só para ADMIN: gestão de equipe (criar outros administradores/organizadores).
+const ADMIN_NAV = {
+  href: '/admins',
+  title: 'Equipe',
+  hint: 'Administradores e organizadores',
+  icon: IconShield,
+};
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -156,7 +165,7 @@ export default async function DashboardPage() {
 
         {/* Navegação */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {NAV.map(({ href, title, hint, icon: Icon }) => (
+          {(user.role === 'ADMIN' ? [...NAV, ADMIN_NAV] : NAV).map(({ href, title, hint, icon: Icon }) => (
             <Tile key={href} href={href} className="flex items-center gap-3">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-ocean/10 text-ocean">
                 <Icon />
