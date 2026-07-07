@@ -13,3 +13,4 @@ export * from './venue';
 export * from './calendar';
 export * from './finals';
 export * from './player-portal';
+export * from './staff';
