@@ -7,7 +7,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@reb/contracts'],
-  output: 'standalone',
+  // Na Vercel (VERCEL=1) o build é nativo; standalone só para Docker/self-host.
+  output: process.env.VERCEL ? undefined : 'standalone',
   outputFileTracingRoot: path.join(__dirname, '../../'),
 };
 

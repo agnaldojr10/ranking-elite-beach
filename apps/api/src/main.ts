@@ -23,8 +23,14 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api/v1');
   // Validação de entrada é feita com zod (ZodValidationPipe), não com class-validator.
+  // WEB_ORIGIN aceita múltiplas origens separadas por vírgula (backoffice + portal).
+  const origins = config
+    .getOrThrow<string>('WEB_ORIGIN')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
   app.enableCors({
-    origin: config.getOrThrow<string>('WEB_ORIGIN'),
+    origin: origins.length === 1 ? origins[0] : origins,
     credentials: true,
   });
 
@@ -36,9 +42,10 @@ async function bootstrap() {
     .build();
   SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, swaggerConfig));
 
-  const port = config.getOrThrow<number>('API_PORT');
-  await app.listen(port);
-  Logger.log(`API em http://localhost:${port}/api/v1 (docs em /api/docs)`, 'Bootstrap');
+  // Em hosts gerenciados (Render/Fly/Railway) a porta chega em PORT; localhost usa API_PORT.
+  const port = Number(process.env.PORT) || config.getOrThrow<number>('API_PORT');
+  await app.listen(port, '0.0.0.0');
+  Logger.log(`API ouvindo na porta ${port} (prefixo /api/v1, docs em /api/docs)`, 'Bootstrap');
 }
 
 void bootstrap();

@@ -1,0 +1,37 @@
+# Blueprint da API (NestJS) na Render — plano gratuito, via Docker.
+# Importe em Render → New → Blueprint (aponta para este repo).
+# Os segredos (sync:false) você preenche no painel da Render após criar.
+# Render injeta PORT automaticamente; a API já escuta em process.env.PORT.
+services:
+  - type: web
+    name: reb-api
+    runtime: docker
+    plan: free
+    region: ohio # escolha a MESMA região do seu Neon (menor latência ao banco)
+    dockerfilePath: apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Connection string POOLED do Neon de produção (host com "-pooler").
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      # URLs do backoffice e do portal na Vercel, separadas por vírgula.
+      - key: WEB_ORIGIN
+        sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_SUBJECT
+        sync: false
+      - key: PUSH_START_LEAD_MIN
+        value: "30"
+      - key: INVITE_TTL_DAYS
+        value: "14"
