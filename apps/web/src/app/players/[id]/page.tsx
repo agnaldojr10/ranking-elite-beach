@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PLAYER_STATUS_LABELS, SKILL_LEVEL_LABELS, type PlayerStats } from '@reb/contracts';
 import { Avatar } from '@/components/Avatar';
+import { PlayerInviteButton } from '@/components/PlayerInviteButton';
 import { getPlayer } from '@/lib/players';
 import { getPlayerStats } from '@/lib/stats';
 import { setPlayerStatusAction } from '../actions';
@@ -55,6 +56,20 @@ export default async function PlayerProfilePage({ params }: { params: { id: stri
           <Info label="Telefone" value={player.phone ?? '—'} />
           <Info label="Nascimento" value={player.birthDate} />
           <Info label="Cadastro" value={new Date(player.createdAt).toLocaleDateString('pt-BR')} />
+        </div>
+
+        {/* Acesso ao portal do jogador */}
+        <div className="mt-8 rounded-3xl border border-line bg-surface p-4 shadow-tile">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="max-w-sm">
+              <h2 className="font-semibold">Acesso ao portal</h2>
+              <p className="mt-1 text-sm text-ink-2">
+                Gere um código para {player.name} ativar a conta no portal do jogador e enviar pelo
+                WhatsApp. Cada código é de uso único.
+              </p>
+            </div>
+            <PlayerInviteButton playerId={player.id} playerName={player.name} />
+          </div>
         </div>
 
         <h2 className="mb-3 mt-8 font-semibold">Estatísticas</h2>

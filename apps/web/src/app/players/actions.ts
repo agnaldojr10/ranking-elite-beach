@@ -60,3 +60,15 @@ export async function setPlayerStatusAction(id: string, status: PlayerStatus): P
   revalidatePath('/players');
   revalidatePath(`/players/${id}`);
 }
+
+/** Gera um convite de acesso ao portal para o atleta (código em claro, uso único). */
+export async function generatePlayerInviteAction(
+  playerId: string,
+): Promise<{ code?: string; expiresAt?: string; error?: string }> {
+  const res = await apiFetch<{ code: string; expiresAt: string }>(
+    `/players/${playerId}/invite`,
+    { method: 'POST' },
+  );
+  if (!res.ok) return { error: res.message };
+  return { code: res.data.code, expiresAt: res.data.expiresAt };
+}
