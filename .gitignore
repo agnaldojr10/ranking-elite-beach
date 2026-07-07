@@ -8,10 +8,12 @@ dist/
 out/
 *.tsbuildinfo
 
-# env
+# env — ignora todos os .env, exceto o exemplo versionado
 .env
 .env.local
 .env.*.local
+.env.*
+!.env.example
 
 # prisma
 packages/db/prisma/*.db

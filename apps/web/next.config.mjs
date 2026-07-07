@@ -7,11 +7,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@reb/contracts'],
-  // Build autossuficiente para Docker: gera .next/standalone com server.js
-  // e apenas as dependências efetivamente usadas (imagem enxuta).
-  output: 'standalone',
-  // Em monorepo, garante que o rastreamento de arquivos do standalone
-  // parta da raiz (inclui os pacotes workspace corretamente).
+  // Build autossuficiente para Docker: gera .next/standalone com server.js e apenas
+  // as dependências usadas. Na Vercel (VERCEL=1) o build é nativo — standalone atrapalha.
+  output: process.env.VERCEL ? undefined : 'standalone',
+  // Em monorepo, garante que o rastreamento de arquivos parta da raiz (workspaces).
   outputFileTracingRoot: path.join(__dirname, '../../'),
 };
 
