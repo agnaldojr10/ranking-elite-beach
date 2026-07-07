@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { IconChart, IconHome, IconTrophy, IconUser } from './icons';
+import { IconChart, IconHome, IconTrophy, IconUser, IconWhistle } from './icons';
 
 const items = [
   { href: '/', label: 'Início', Icon: IconHome },
   { href: '/torneios', label: 'Torneios', Icon: IconTrophy },
+  { href: '/rodada', label: 'Rodada', Icon: IconWhistle },
   { href: '/jogos', label: 'Jogos', Icon: IconChart },
   { href: '/perfil', label: 'Perfil', Icon: IconUser },
 ];

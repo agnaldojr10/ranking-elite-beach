@@ -81,6 +81,14 @@ export const IconLogout = (p: IconProps) => (
   </svg>
 );
 
+export const IconWhistle = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M3 11a5 5 0 0 0 5 5h4l4 3v-5.5a5 5 0 0 0-5-4.5H3Z" />
+    <path d="M3 11V8h6" />
+    <circle cx="8" cy="12" r="1.5" />
+  </svg>
+);
+
 export const IconWave = (p: IconProps) => (
   <svg {...base(p)}>
     <path d="M2 12c2 0 2-2 4-2s2 2 4 2 2-2 4-2 2 2 4 2 2-2 4-2" />

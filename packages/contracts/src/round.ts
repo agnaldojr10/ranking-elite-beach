@@ -415,3 +415,72 @@ export function describeRoundFormat(teams: number, groupSizePref = 3): RoundForm
     qualificationRule: 'As 2 melhores duplas fazem a Final.',
   };
 }
+
+// ---------------------------------------------------------------------------
+// Relatório da rodada (texto para compartilhar no WhatsApp)
+// ---------------------------------------------------------------------------
+
+export const RoundReportSchema = z.object({ text: z.string() });
+export type RoundReport = z.infer<typeof RoundReportSchema>;
+
+export type RoundReportResult = {
+  playerNames: [string, string];
+  finalPosition: number;
+  pointsAwarded: number;
+};
+export type RoundReportRankingRow = { playerName: string; points: number };
+
+/** Converte AAAA-MM-DD (ou ISO) em DD/MM/AAAA; devolve como veio se não casar. */
+function formatReportDate(date: string | null): string | null {
+  if (!date) return null;
+  const m = date.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : date;
+}
+
+const MEDALS = ['🥇', '🥈', '🥉'];
+const pair = (names: [string, string]) => names.filter(Boolean).join(' & ');
+
+/**
+ * Monta o texto do relatório da rodada (colocação + ranking atualizado) para
+ * envio manual no WhatsApp. Função pura/testável — a API só junta os dados.
+ */
+export function buildRoundReport(input: {
+  championshipName: string;
+  roundLabel: string;
+  date: string | null;
+  results: RoundReportResult[];
+  ranking: RoundReportRankingRow[];
+  rankingLimit?: number;
+}): string {
+  const date = formatReportDate(input.date);
+  const lines: string[] = [];
+
+  lines.push(`🏖️ ${input.championshipName}`);
+  lines.push(`🎾 ${input.roundLabel}${date ? ` — ${date}` : ''}`);
+
+  const results = [...input.results].sort((a, b) => a.finalPosition - b.finalPosition);
+  if (results.length > 0) {
+    lines.push('', '🏆 Resultado da rodada');
+    for (const r of results) {
+      const badge = MEDALS[r.finalPosition - 1] ?? `${r.finalPosition}º`;
+      lines.push(`${badge} ${pair(r.playerNames)} — ${r.pointsAwarded} pts`);
+    }
+  } else {
+    lines.push('', '_Rodada ainda em andamento (sem resultado final)._');
+  }
+
+  const limit = input.rankingLimit ?? 10;
+  const top = input.ranking.slice(0, limit);
+  if (top.length > 0) {
+    lines.push('', '📊 Ranking do campeonato');
+    top.forEach((row, i) => {
+      lines.push(`${i + 1}. ${row.playerName} — ${row.points} pts`);
+    });
+    if (input.ranking.length > limit) {
+      lines.push(`… e mais ${input.ranking.length - limit}.`);
+    }
+  }
+
+  lines.push('', 'Ranking Elite Beach 🏝️');
+  return lines.join('\n');
+}
