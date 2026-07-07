@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
+import { BeachTennisLoader } from '@/components/ui/BeachTennisLoader';
 
 export function LoginForm() {
   const router = useRouter();
@@ -25,13 +26,14 @@ export function LoginForm() {
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         setError(body?.error?.message ?? 'E-mail ou senha inválidos');
+        setLoading(false);
         return;
       }
+      // Sucesso: mantém o loader (não reseta `loading`) até a navegação assumir.
       router.replace('/dashboard');
       router.refresh();
     } catch {
       setError('Erro de conexão com o servidor');
-    } finally {
       setLoading(false);
     }
   }
@@ -40,7 +42,13 @@ export function LoginForm() {
     'h-11 rounded-2xl border border-line bg-surface-2 px-4 text-ink outline-none transition focus:border-ocean';
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <>
+      {loading && (
+        <div className="fixed inset-0 z-50" style={{ background: 'rgb(var(--c-surface))' }}>
+          <BeachTennisLoader />
+        </div>
+      )}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1.5 text-sm font-medium text-ink-2">
         E-mail
         <input
@@ -83,6 +91,7 @@ export function LoginForm() {
       <Button type="submit" disabled={loading} className="mt-1 w-full">
         {loading ? 'Entrando…' : 'Entrar'}
       </Button>
-    </form>
+      </form>
+    </>
   );
 }
