@@ -224,6 +224,8 @@ export class MeService {
       position: idx >= 0 ? idx + 1 : null,
       total: ranking.entries.length,
       rounds: roundViews,
+      myPlayerId: playerId,
+      ranking: ranking.entries,
     };
   }
 

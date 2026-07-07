@@ -3,6 +3,7 @@ import { ChampionshipStatusSchema } from './championship';
 import { MatchStatusSchema } from './draw';
 import { KnockoutMatchViewSchema } from './knockout';
 import { GroupStandingsSchema, MatchTeamRefSchema, SetScoreSchema } from './match';
+import { RankingEntrySchema } from './ranking';
 import { RoundKindSchema, RoundStatusSchema } from './round';
 
 // ---------------------------------------------------------------------------
@@ -91,7 +92,7 @@ export const MeTournamentRoundSchema = z.object({
 });
 export type MeTournamentRound = z.infer<typeof MeTournamentRoundSchema>;
 
-/** Detalhe de um campeonato do atleta (minhas rodadas). */
+/** Detalhe de um campeonato do atleta (minhas rodadas + ranking do torneio). */
 export const MeTournamentDetailSchema = z.object({
   championshipId: z.string(),
   name: z.string(),
@@ -99,6 +100,10 @@ export const MeTournamentDetailSchema = z.object({
   position: z.number().int().nullable(),
   total: z.number().int(),
   rounds: z.array(MeTournamentRoundSchema),
+  /** Id do próprio atleta (para destacar sua linha no ranking). */
+  myPlayerId: z.string(),
+  /** Ranking geral do torneio (todos os participantes, em ordem). */
+  ranking: z.array(RankingEntrySchema),
 });
 export type MeTournamentDetail = z.infer<typeof MeTournamentDetailSchema>;
 

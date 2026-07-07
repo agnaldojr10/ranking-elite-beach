@@ -69,6 +69,8 @@ export class PortalRoundsService {
         pointsAwarded: r.pointsAwarded,
       })),
       ranking: ranking.entries.map((e) => ({ playerName: e.playerName, points: e.points })),
+      // Relatório do WhatsApp lista o ranking COMPLETO do campeonato.
+      rankingLimit: ranking.entries.length,
     });
 
     return { text };
