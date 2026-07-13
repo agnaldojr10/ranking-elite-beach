@@ -4,7 +4,9 @@ import { useFormState, useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import {
   PLAYER_STATUS_LABELS,
+  PLAYER_TYPE_LABELS,
   PlayerStatusSchema,
+  PlayerTypeSchema,
   SKILL_LEVEL_LABELS,
   SkillLevelSchema,
 } from '@reb/contracts';
@@ -18,6 +20,7 @@ type Defaults = {
   phone?: string | null;
   skillLevel?: string;
   status?: string;
+  type?: string;
 };
 
 function SubmitButton({ label }: { label: string }) {
@@ -100,6 +103,21 @@ export function PlayerForm({
           </select>
         </label>
       </div>
+
+      <label className="flex flex-col gap-1 text-sm">
+        Tipo no ranking
+        <select name="type" defaultValue={defaults.type ?? 'REGULAR'} className={field}>
+          {PlayerTypeSchema.options.map((t) => (
+            <option key={t} value={t}>
+              {PLAYER_TYPE_LABELS[t]}
+            </option>
+          ))}
+        </select>
+        <span className="text-xs text-muted">
+          &quot;Convidado&quot; joga para completar o chaveamento, mas não pontua nem aparece no
+          ranking (ex.: professor). Não afeta os pontos do parceiro.
+        </span>
+      </label>
 
       {state?.error && (
         <p role="alert" className="rounded-2xl bg-danger/10 px-3 py-2 text-sm text-danger">

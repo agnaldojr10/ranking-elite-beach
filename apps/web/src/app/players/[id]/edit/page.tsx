@@ -35,6 +35,7 @@ export default async function EditPlayerPage({ params }: { params: { id: string 
             phone: player.phone,
             skillLevel: player.skillLevel,
             status: player.status,
+            type: player.type,
           }}
         />
       </section>

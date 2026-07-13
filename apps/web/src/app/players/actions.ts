@@ -15,6 +15,7 @@ function readForm(formData: FormData) {
     phone: String(formData.get('phone') ?? ''),
     skillLevel: String(formData.get('skillLevel') ?? 'INTERMEDIATE'),
     status: String(formData.get('status') ?? 'ACTIVE'),
+    type: String(formData.get('type') ?? 'REGULAR'),
   };
 }
 

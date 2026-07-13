@@ -6,6 +6,16 @@ export type SkillLevel = z.infer<typeof SkillLevelSchema>;
 export const PlayerStatusSchema = z.enum(['ACTIVE', 'INACTIVE']);
 export type PlayerStatus = z.infer<typeof PlayerStatusSchema>;
 
+/**
+ * Tipo do jogador para efeito de ranking:
+ * - REGULAR: participa e pontua normalmente.
+ * - GUEST (convidado): joga para completar o chaveamento, mas NÃO pontua e NÃO
+ *   aparece no ranking (ex.: professor entrando só para fechar as duplas). Não
+ *   afeta a pontuação do parceiro: se a dupla tem um regular, ele pontua normal.
+ */
+export const PlayerTypeSchema = z.enum(['REGULAR', 'GUEST']);
+export type PlayerType = z.infer<typeof PlayerTypeSchema>;
+
 /** Rótulos em pt-BR para exibição. */
 export const SKILL_LEVEL_LABELS: Record<SkillLevel, string> = {
   BEGINNER: 'Iniciante',
@@ -17,6 +27,11 @@ export const SKILL_LEVEL_LABELS: Record<SkillLevel, string> = {
 export const PLAYER_STATUS_LABELS: Record<PlayerStatus, string> = {
   ACTIVE: 'Ativo',
   INACTIVE: 'Inativo',
+};
+
+export const PLAYER_TYPE_LABELS: Record<PlayerType, string> = {
+  REGULAR: 'Normal',
+  GUEST: 'Convidado',
 };
 
 /** Data no formato YYYY-MM-DD. */
@@ -32,6 +47,7 @@ export const CreatePlayerSchema = z.object({
   phone: z.string().trim().max(30).optional().or(z.literal('')),
   skillLevel: SkillLevelSchema.default('INTERMEDIATE'),
   status: PlayerStatusSchema.default('ACTIVE'),
+  type: PlayerTypeSchema.default('REGULAR'),
 });
 export type CreatePlayer = z.infer<typeof CreatePlayerSchema>;
 
@@ -60,6 +76,7 @@ export const PlayerSchema = z.object({
   phone: z.string().nullable(),
   skillLevel: SkillLevelSchema,
   status: PlayerStatusSchema,
+  type: PlayerTypeSchema,
   createdAt: z.string(),
 });
 export type Player = z.infer<typeof PlayerSchema>;

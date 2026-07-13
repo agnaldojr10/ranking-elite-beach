@@ -34,6 +34,11 @@ enum PlayerStatus {
   INACTIVE
 }
 
+enum PlayerType {
+  REGULAR
+  GUEST
+}
+
 /// Situação da temporada.
 enum SeasonStatus {
   OPEN
@@ -157,6 +162,7 @@ model Player {
   phone      String?
   skillLevel SkillLevel   @default(INTERMEDIATE) @map("skill_level")
   status     PlayerStatus @default(ACTIVE)
+  type       PlayerType   @default(REGULAR) @map("player_type")
   createdAt  DateTime     @default(now()) @map("created_at")
   updatedAt  DateTime     @updatedAt @map("updated_at")
 
