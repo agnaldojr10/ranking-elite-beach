@@ -58,6 +58,7 @@ export class PlayersService {
         phone: dto.phone ? dto.phone : null,
         skillLevel: dto.skillLevel,
         status: dto.status,
+        type: dto.type,
       },
     });
     return this.toDto(player);
@@ -74,6 +75,7 @@ export class PlayersService {
         ...(dto.phone !== undefined ? { phone: dto.phone ? dto.phone : null } : {}),
         ...(dto.skillLevel !== undefined ? { skillLevel: dto.skillLevel } : {}),
         ...(dto.status !== undefined ? { status: dto.status } : {}),
+        ...(dto.type !== undefined ? { type: dto.type } : {}),
       },
     });
     return this.toDto(player);
@@ -102,6 +104,7 @@ export class PlayersService {
       phone: p.phone,
       skillLevel: p.skillLevel,
       status: p.status,
+      type: p.type,
       createdAt: p.createdAt.toISOString(),
     };
   }

@@ -40,10 +40,11 @@ export class RankingService {
     // Pontos por colocação (RoundResult) creditados aos 2 jogadores da dupla.
     const results = await this.prisma.roundResult.findMany({
       where: { roundId: { in: roundIds } },
-      include: { team: { include: { players: { include: { player: { select: { id: true, name: true } } } } } } },
+      include: { team: { include: { players: { include: { player: { select: { id: true, name: true, type: true } } } } } } },
     });
     for (const r of results) {
       for (const tp of r.team.players) {
+        if (tp.player.type === 'GUEST') continue; // convidado não pontua/não rankeia
         const a = touch(tp.player.id, tp.player.name);
         a.points += r.pointsAwarded;
         a.rounds.add(r.roundId);
@@ -57,8 +58,8 @@ export class RankingService {
         OR: [{ group: { roundId: { in: roundIds } } }, { roundId: { in: roundIds } }],
       },
       include: {
-        teamA: { include: { players: { include: { player: { select: { id: true, name: true } } } } } },
-        teamB: { include: { players: { include: { player: { select: { id: true, name: true } } } } } },
+        teamA: { include: { players: { include: { player: { select: { id: true, name: true, type: true } } } } } },
+        teamB: { include: { players: { include: { player: { select: { id: true, name: true, type: true } } } } } },
       },
     });
     for (const m of matches) {
@@ -71,6 +72,7 @@ export class RankingService {
       const loseGames = aWon ? games.b : games.a;
 
       for (const tp of winners) {
+        if (tp.player.type === 'GUEST') continue;
         const a = touch(tp.player.id, tp.player.name);
         a.wins += 1;
         a.gamesFor += winGames;
@@ -79,6 +81,7 @@ export class RankingService {
       // BR-32: derrota por W.O. de lesão não conta para o lesionado (dupla perdedora).
       if (m.isWalkover && m.walkoverInjury) continue;
       for (const tp of losers) {
+        if (tp.player.type === 'GUEST') continue;
         const a = touch(tp.player.id, tp.player.name);
         a.losses += 1;
         a.gamesFor += loseGames;
@@ -110,7 +113,7 @@ export class RankingService {
 
     const results = await this.prisma.roundResult.findMany({
       where: { roundId: { in: rounds.map((r) => r.id) } },
-      include: { team: { include: { players: { include: { player: { select: { id: true, name: true } } } } } } },
+      include: { team: { include: { players: { include: { player: { select: { id: true, name: true, type: true } } } } } } },
     });
 
     // pontos por (jogador, rodada)
@@ -118,6 +121,7 @@ export class RankingService {
     const perRound = new Map<string, Map<string, number>>(); // playerId → roundId → pontos
     for (const r of results) {
       for (const tp of r.team.players) {
+        if (tp.player.type === 'GUEST') continue; // convidado fora da evolução também
         names.set(tp.player.id, tp.player.name);
         const byRound = perRound.get(tp.player.id) ?? new Map<string, number>();
         byRound.set(r.roundId, (byRound.get(r.roundId) ?? 0) + r.pointsAwarded);

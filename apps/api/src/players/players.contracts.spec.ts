@@ -23,6 +23,14 @@ describe('CreatePlayerSchema', () => {
     const parsed = CreatePlayerSchema.parse({ name: 'João Silva', birthDate: '1990-05-20' });
     expect(parsed.skillLevel).toBe('INTERMEDIATE');
     expect(parsed.status).toBe('ACTIVE');
+    expect(parsed.type).toBe('REGULAR');
+  });
+
+  it('aceita tipo GUEST (convidado) e rejeita tipo inválido', () => {
+    expect(CreatePlayerSchema.parse({ name: 'Professor', birthDate: '1990-05-20', type: 'GUEST' }).type).toBe('GUEST');
+    expect(
+      CreatePlayerSchema.safeParse({ name: 'X', birthDate: '1990-05-20', type: 'FOO' }).success,
+    ).toBe(false);
   });
 
   it('rejeita nome curto', () => {

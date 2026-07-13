@@ -30,7 +30,14 @@ export default async function PlayerProfilePage({ params }: { params: { id: stri
           <div className="flex items-center gap-4">
             <Avatar name={player.name} photoUrl={player.photoUrl} size={72} />
             <div>
-              <h1 className="text-2xl font-bold">{player.name}</h1>
+              <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold">
+                {player.name}
+                {player.type === 'GUEST' && (
+                  <span className="rounded-full bg-warn/15 px-2.5 py-0.5 text-xs font-semibold text-warn">
+                    Convidado · não pontua
+                  </span>
+                )}
+              </h1>
               <p className="text-ink-2">
                 {player.age} anos · {SKILL_LEVEL_LABELS[player.skillLevel]} ·{' '}
                 {PLAYER_STATUS_LABELS[player.status]}
