@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import {
   DEFAULT_SCORING_TABLE,
   ScoringTableSchema,
+  buildSemifinalPairings,
   computeGroupStandings,
   computeRoundPlacement,
   nextStagePairings,
@@ -81,16 +82,24 @@ export class KnockoutService {
     const loserOf = (m: { teamAId: string; teamBId: string; winnerTeamId: string | null }) =>
       m.winnerTeamId === m.teamAId ? m.teamBId : m.teamAId;
 
-    // Quartas (repescagem com byes) concluídas → Semifinal: cada bye enfrenta o
-    // vencedor da sua chave (slot 0 → bye seed1; slot 1 → bye seed2).
+    // Quartas (repescagem com byes) concluídas → Semifinal: cada bye enfrenta um
+    // vencedor de quarta. Em 2 grupos, evita revanche de grupo (anti-revanche).
     if (stages.has('QF') && complete('QF') && !stages.has('SF')) {
-      const plan = planKnockout(await this.loadStandings(roundId));
+      const standings = await this.loadStandings(roundId);
+      const plan = planKnockout(standings);
       const qf = inStage('QF');
       if (plan.format === 'QUARTER_WITH_BYES' && qf.length === 2 && plan.byes.length === 2) {
-        await this.createStage(roundId, 'SF', [
-          { slot: 0, teamAId: plan.byes[0]!, teamBId: qf[0]!.winnerTeamId! },
-          { slot: 1, teamAId: plan.byes[1]!, teamBId: qf[1]!.winnerTeamId! },
-        ]);
+        const groupOf = new Map<string, string>();
+        for (const g of standings) for (const s of g.standings) groupOf.set(s.teamId, g.groupName);
+        const sameGroup = (a: string, b: string) =>
+          !!groupOf.get(a) && groupOf.get(a) === groupOf.get(b);
+        const sf = buildSemifinalPairings(
+          [plan.byes[0]!, plan.byes[1]!],
+          [qf[0]!.winnerTeamId!, qf[1]!.winnerTeamId!],
+          sameGroup,
+          !!plan.avoidSemiRematch,
+        );
+        await this.createStage(roundId, 'SF', sf);
         return;
       }
     }

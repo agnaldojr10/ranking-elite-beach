@@ -384,7 +384,9 @@ export function describeRoundFormat(teams: number, groupSizePref = 3): RoundForm
       bestRunnersUp: Math.max(0, 6 - groupCount),
       qualifiers: 6,
       qualificationRule:
-        'As 6 melhores duplas (ranking geral por vitórias e saldo) avançam: a 1ª e a 2ª vão direto à semifinal; a 3ª à 6ª disputam as quartas por 2 vagas (evitando revanche de grupo). Depois Final + disputa de 3º.',
+        groupCount === 2
+          ? 'O campeão de cada grupo vai direto à semifinal; os 4 melhores restantes (ranking geral) fazem as quartas (melhor×pior, 2º×3º). Na semi, o vencedor da quarta enfrenta o campeão que não pegou no grupo (anti-revanche). Depois Final + 3º.'
+          : 'As 6 melhores duplas (ranking geral por vitórias e saldo) avançam: a 1ª e a 2ª vão direto à semifinal; a 3ª à 6ª disputam as quartas por 2 vagas (evitando revanche de grupo). Depois Final + disputa de 3º.',
     };
   }
 

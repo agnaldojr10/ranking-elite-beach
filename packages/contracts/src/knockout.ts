@@ -48,14 +48,16 @@ export type Pairing = { slot: number; teamAId: string; teamBId: string };
 // ---------------------------------------------------------------------------
 // Classificação flexível por nº de duplas (Fase 14) — automática, sem config.
 //
-//   D ≥ 6  → 6 classificados: as 2 melhores vão DIRETO à semifinal (bye) e a
-//            3ª–6ª disputam as quartas (2 vagas). Ex.: 18 jogadores (9 duplas,
-//            3 grupos de 3), 16 (2×4), 12 (2×3). 7º+ eliminados por desempenho.
+//   2 GRUPOS (ex.: 16 jogadores = 2×4) → regra específica: o CAMPEÃO de cada
+//     grupo vai DIRETO à semifinal (bye); os 4 melhores restantes (ranking
+//     geral) fazem as quartas (melhor×pior, 2º×3º). Na semifinal, o vencedor
+//     da quarta é encaixado no campeão que NÃO enfrentou nos grupos (anti-
+//     revanche), quando possível.
+//   OUTROS D ≥ 6 (ex.: 18 = 3×3) → 6 classificados: as 2 melhores no ranking
+//     GERAL vão à semi (bye); a 3ª–6ª fazem as quartas (com anti-revanche nas
+//     quartas). 7º+ eliminados por desempenho.
 //   D = 4-5 → 4 classificados: semifinal direta (1×4, 2×3) → Final + 3º.
 //   D = 2-3 → 2 classificados: Final direta (1×2); 3º pela classificação.
-//
-// O ranqueamento é GLOBAL por vitórias → saldo de games (não por grupo), e as
-// quartas evitam revanche de grupo (invertem os pares quando possível).
 // ---------------------------------------------------------------------------
 export type KnockoutFormat = 'FINAL' | 'SEMI' | 'QUARTER_WITH_BYES';
 
@@ -70,7 +72,35 @@ export type KnockoutPlan = {
   /** Primeira fase a ser criada: 'F' | 'SF' | 'QF'. */
   firstStage: string;
   firstPairings: Pairing[];
+  /** Aplicar anti-revanche de grupo na SEMIFINAL (regra específica de 2 grupos). */
+  avoidSemiRematch?: boolean;
 };
+
+/**
+ * Monta a semifinal encaixando os byes (campeões) com os vencedores das quartas.
+ * Com `avoidRematch`, escolhe a atribuição que evita que um campeão reencontre,
+ * na semi, alguém que já enfrentou nos grupos (função pura/testável).
+ */
+export function buildSemifinalPairings(
+  byes: [string, string],
+  qfWinners: [string, string],
+  sameGroup: (a: string, b: string) => boolean,
+  avoidRematch: boolean,
+): Pairing[] {
+  const [b0, b1] = byes;
+  const [w0, w1] = qfWinners;
+  const optA: Pairing[] = [
+    { slot: 0, teamAId: b0, teamBId: w0 },
+    { slot: 1, teamAId: b1, teamBId: w1 },
+  ];
+  const optB: Pairing[] = [
+    { slot: 0, teamAId: b0, teamBId: w1 },
+    { slot: 1, teamAId: b1, teamBId: w0 },
+  ];
+  if (!avoidRematch) return optA;
+  const rematches = (o: Pairing[]) => o.filter((p) => sameGroup(p.teamAId, p.teamBId)).length;
+  return rematches(optB) < rematches(optA) ? optB : optA;
+}
 
 /** Ranqueia TODAS as duplas globalmente por vitórias → saldo de games. */
 export function globalRank(
@@ -98,6 +128,30 @@ export function planKnockout(groupStandings: GroupStandings[]): KnockoutPlan {
       groupPosition: 0,
     }));
   const D = ranked.length;
+
+  // Regra específica de 2 GRUPOS: campeão de cada grupo vai direto à semi.
+  if (groupStandings.length === 2 && D >= 6) {
+    const winnerOf = (g: GroupStandings) =>
+      [...g.standings].sort((a, b) => b.wins - a.wins || b.gamesBalance - a.gamesBalance)[0]?.teamId;
+    const winnerIds = new Set(groupStandings.map(winnerOf).filter(Boolean) as string[]);
+    // byes = os 2 campeões (ordenados por ranking global; byes[0] = melhor campeão).
+    const byes = ranked.filter((r) => winnerIds.has(r.teamId)).map((r) => r.teamId).slice(0, 2);
+    // quartas = os 4 melhores entre os NÃO-campeões (melhor×pior, 2º×3º).
+    const pool = ranked.filter((r) => !winnerIds.has(r.teamId)).map((r) => r.teamId);
+    const [q1, q2, q3, q4] = pool.slice(0, 4) as [string, string, string, string];
+    return {
+      format: 'QUARTER_WITH_BYES',
+      qualifiers: mkQual([...byes, q1, q2, q3, q4]),
+      qualifierCount: 6,
+      byes,
+      firstStage: 'QF',
+      firstPairings: [
+        { slot: 0, teamAId: q1, teamBId: q4 }, // melhor × pior
+        { slot: 1, teamAId: q2, teamBId: q3 }, // 2º × 3º
+      ],
+      avoidSemiRematch: true,
+    };
+  }
 
   if (D >= 6) {
     const [s1, s2, s3, s4, s5, s6] = ranked.slice(0, 6).map((r) => r.teamId) as [

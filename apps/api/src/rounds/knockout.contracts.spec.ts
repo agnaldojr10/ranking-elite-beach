@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_SCORING_TABLE,
+  buildSemifinalPairings,
   computeRoundPlacement,
   globalRank,
   planKnockout,
@@ -87,6 +88,26 @@ describe('planKnockout (classificação flexível — Fase 14)', () => {
     ]);
   });
 
+  it('2 grupos de 4 (16 jog.): campeão de cada grupo vai à semi (bye), mesmo com paridade', () => {
+    // Grupo B equilibrado: A2 (vice do A) supera B1 (campeão do B) no ranking geral.
+    const A = grp('A', [st('A1', 1, 3, 20), st('A2', 2, 2, 12), st('A3', 3, 1, -4), st('A4', 4, 0, -28)]);
+    const B = grp('B', [st('B1', 1, 2, 5), st('B2', 2, 2, 3), st('B3', 3, 1, -3), st('B4', 4, 1, -5)]);
+    const plan = planKnockout([A, B]);
+
+    expect(plan.format).toBe('QUARTER_WITH_BYES');
+    expect(plan.avoidSemiRematch).toBe(true);
+    // byes = campeões dos grupos (A1 e B1), NÃO os 2 melhores gerais (A1, A2).
+    expect(new Set(plan.byes)).toEqual(new Set(['A1', 'B1']));
+    // quartas = 4 melhores entre os não-campeões: A2,B2,B3,A3 → melhor×pior, 2º×3º
+    const qf = plan.firstPairings;
+    expect(qf).toHaveLength(2);
+    const flat = qf.flatMap((p) => [p.teamAId, p.teamBId]);
+    expect(new Set(flat)).toEqual(new Set(['A2', 'B2', 'B3', 'A3']));
+    // melhor (A2) x pior (A3); 2º (B2) x 3º (B3) — ranking geral entre os 4
+    expect(qf).toContainEqual({ slot: 0, teamAId: 'A2', teamBId: 'A3' });
+    expect(qf).toContainEqual({ slot: 1, teamAId: 'B2', teamBId: 'B3' });
+  });
+
   it('3 duplas: 2 classificados, Final direta', () => {
     const a = grp('A', [st('T1', 1, 2, 6), st('T2', 2, 1, 0), st('T3', 3, 0, -6)]);
     const plan = planKnockout([a]);
@@ -94,6 +115,33 @@ describe('planKnockout (classificação flexível — Fase 14)', () => {
     expect(plan.qualifierCount).toBe(2);
     expect(plan.firstStage).toBe('F');
     expect(plan.firstPairings).toEqual([{ slot: 0, teamAId: 'T1', teamBId: 'T2' }]);
+  });
+});
+
+describe('buildSemifinalPairings (anti-revanche na semi — 2 grupos)', () => {
+  const sameGroup = (a: string, b: string) => a[0] === b[0]; // 'A2'/'A3' = mesmo grupo
+
+  it('troca a atribuição para o campeão não pegar quem enfrentou no grupo', () => {
+    // byes A1(grupo A), B1(grupo B); vencedores das quartas: A2 (slot0), B2 (slot1)
+    const sf = buildSemifinalPairings(['A1', 'B1'], ['A2', 'B2'], sameGroup, true);
+    expect(sf).toContainEqual({ slot: 0, teamAId: 'A1', teamBId: 'B2' });
+    expect(sf).toContainEqual({ slot: 1, teamAId: 'B1', teamBId: 'A2' });
+  });
+
+  it('mantém o padrão quando já não há revanche', () => {
+    const sf = buildSemifinalPairings(['A1', 'B1'], ['B2', 'A2'], sameGroup, true);
+    expect(sf).toEqual([
+      { slot: 0, teamAId: 'A1', teamBId: 'B2' },
+      { slot: 1, teamAId: 'B1', teamBId: 'A2' },
+    ]);
+  });
+
+  it('sem avoidRematch, usa a atribuição padrão (sem trocar)', () => {
+    const sf = buildSemifinalPairings(['A1', 'B1'], ['A2', 'B2'], sameGroup, false);
+    expect(sf).toEqual([
+      { slot: 0, teamAId: 'A1', teamBId: 'A2' },
+      { slot: 1, teamAId: 'B1', teamBId: 'B2' },
+    ]);
   });
 });
 
