@@ -57,6 +57,7 @@ describe('planKnockout (classificação flexível — Fase 14)', () => {
     expect(plan.qualifierCount).toBe(6);
     expect(plan.byes).toEqual(['G1', 'G2']); // 2 melhores vão direto à semi
     expect(plan.firstStage).toBe('QF');
+    expect(plan.avoidSemiRematch).toBe(true); // anti-revanche também na semifinal
     // sem revanche: default 4×5 (slot0, enfrenta bye seed1) e 3×6 (slot1, enfrenta seed2)
     expect(plan.firstPairings).toContainEqual({ slot: 0, teamAId: 'G4', teamBId: 'G5' });
     expect(plan.firstPairings).toContainEqual({ slot: 1, teamAId: 'G3', teamBId: 'G6' });
