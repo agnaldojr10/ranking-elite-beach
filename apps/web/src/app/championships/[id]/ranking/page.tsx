@@ -114,20 +114,21 @@ export default async function RankingPage({
 
 function EvolutionTable({ evolution }: { evolution: RankingEvolution }) {
   const top = evolution.players.slice(0, 5);
+  // O gráfico mostra o acumulado; a tabela mostra os pontos de cada rodada + total.
+  const perRound = (cumulative: number[]) =>
+    cumulative.map((v, i) => v - (cumulative[i - 1] ?? 0));
+  const totalOf = (cumulative: number[]) => cumulative[cumulative.length - 1] ?? 0;
+
   return (
     <div>
-      <h2 className="mb-3 font-semibold">Evolução (pontos acumulados por rodada)</h2>
+      <h2 className="mb-3 font-semibold">Pontos por rodada</h2>
       {top.length > 0 && (
         <div className="mb-4 rounded-3xl border border-line bg-surface p-4 shadow-tile">
+          <p className="mb-2 text-xs text-muted">Evolução (pontos acumulados) — 5 primeiros:</p>
           <LineChart
             xLabels={evolution.rounds.map(String)}
             series={top.map((p) => ({ name: p.playerName, values: p.cumulative }))}
           />
-          {evolution.players.length > top.length && (
-            <p className="mt-2 text-xs text-muted">
-              Mostrando os 5 primeiros; a tabela abaixo traz todos.
-            </p>
-          )}
         </div>
       )}
       <div className="overflow-x-auto rounded-3xl border border-line bg-surface shadow-tile">
@@ -140,17 +141,21 @@ function EvolutionTable({ evolution }: { evolution: RankingEvolution }) {
                   R{n}
                 </th>
               ))}
+              <th className="px-4 py-3 text-right">Total</th>
             </tr>
           </thead>
           <tbody>
             {evolution.players.map((p) => (
               <tr key={p.playerId} className="border-t border-line">
                 <td className="px-4 py-2">{p.playerName}</td>
-                {p.cumulative.map((v, i) => (
-                  <td key={i} className="px-3 py-2 text-right">
+                {perRound(p.cumulative).map((v, i) => (
+                  <td key={i} className="px-3 py-2 text-right text-ink-2">
                     {v}
                   </td>
                 ))}
+                <td className="px-4 py-2 text-right font-semibold text-ink">
+                  {totalOf(p.cumulative)}
+                </td>
               </tr>
             ))}
           </tbody>
