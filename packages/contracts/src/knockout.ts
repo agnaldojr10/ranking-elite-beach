@@ -53,7 +53,8 @@ export type Pairing = { slot: number; teamAId: string; teamBId: string };
 //     → Final + 3º. O cruzamento evita revanche de grupo na semi.
 //   OUTROS D ≥ 6 (ex.: 18 = 3×3) → 6 classificados: as 2 melhores no ranking
 //     GERAL vão à semi (bye); a 3ª–6ª fazem as quartas (com anti-revanche nas
-//     quartas). 7º+ eliminados por desempenho.
+//     quartas). Na semifinal também há anti-revanche: o vencedor da quarta pega
+//     o bye que NÃO enfrentou nos grupos. 7º+ eliminados por desempenho.
 //   D = 4-5 → 4 classificados: semifinal direta (1×4, 2×3) → Final + 3º.
 //   D = 2-3 → 2 classificados: Final direta (1×2); 3º pela classificação.
 // ---------------------------------------------------------------------------
@@ -175,6 +176,9 @@ export function planKnockout(groupStandings: GroupStandings[]): KnockoutPlan {
       byes: [s1, s2],
       firstStage: 'QF',
       firstPairings,
+      // Na semifinal, encaixa o vencedor da quarta no bye que ele NÃO enfrentou
+      // nos grupos (evita revanche de grupo na semi).
+      avoidSemiRematch: true,
     };
   }
 
