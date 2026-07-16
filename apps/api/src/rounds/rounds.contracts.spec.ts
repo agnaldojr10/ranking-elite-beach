@@ -115,24 +115,25 @@ describe('describeRoundFormat (classificação flexível — Fase 14)', () => {
     expect(f.bracketSize).toBe(4);
   });
 
-  it('6 duplas (12 jogadores) → 6 classificados (2 byes + quartas)', () => {
+  it('6 duplas (2 grupos) → 4 classificados (2 de cada grupo, semifinal)', () => {
     const f = describeRoundFormat(6);
     expect(f.groupCount).toBe(2);
-    expect(f.qualifiers).toBe(6);
-    expect(f.bracketSize).toBe(6);
+    expect(f.qualifiers).toBe(4);
+    expect(f.bracketLabel).toBe('Semifinal');
   });
 
-  it('9 duplas (18 jogadores) → 6 classificados (2 byes + quartas)', () => {
+  it('9 duplas (18 jogadores, 3 grupos) → 6 classificados (2 byes + quartas)', () => {
     const f = describeRoundFormat(9);
     expect(f.groupCount).toBe(3);
     expect(f.qualifiers).toBe(6);
     expect(f.bracketSize).toBe(6);
   });
 
-  it('8 duplas (16 jogadores) → 6 classificados', () => {
+  it('8 duplas (16 jogadores, 2 grupos) → 4 classificados (semifinal cruzada)', () => {
     const f = describeRoundFormat(8);
-    expect(f.qualifiers).toBe(6);
-    expect(f.bracketLabel).toBe('Quartas de final');
+    expect(f.groupCount).toBe(2);
+    expect(f.qualifiers).toBe(4);
+    expect(f.bracketLabel).toBe('Semifinal');
   });
 });
 

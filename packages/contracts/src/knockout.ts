@@ -48,14 +48,14 @@ export type Pairing = { slot: number; teamAId: string; teamBId: string };
 // ---------------------------------------------------------------------------
 // Classificação flexível por nº de duplas (Fase 14) — automática, sem config.
 //
-//   D ≥ 6  → 6 classificados: as 2 melhores vão DIRETO à semifinal (bye) e a
-//            3ª–6ª disputam as quartas (2 vagas). Ex.: 18 jogadores (9 duplas,
-//            3 grupos de 3), 16 (2×4), 12 (2×3). 7º+ eliminados por desempenho.
+//   2 GRUPOS (ex.: 16 jogadores = 2×4) → regra específica: classificam os 2
+//     PRIMEIROS de cada grupo (4 duplas) → semifinal CRUZADA (1ºA×2ºB, 1ºB×2ºA)
+//     → Final + 3º. O cruzamento evita revanche de grupo na semi.
+//   OUTROS D ≥ 6 (ex.: 18 = 3×3) → 6 classificados: as 2 melhores no ranking
+//     GERAL vão à semi (bye); a 3ª–6ª fazem as quartas (com anti-revanche nas
+//     quartas). 7º+ eliminados por desempenho.
 //   D = 4-5 → 4 classificados: semifinal direta (1×4, 2×3) → Final + 3º.
 //   D = 2-3 → 2 classificados: Final direta (1×2); 3º pela classificação.
-//
-// O ranqueamento é GLOBAL por vitórias → saldo de games (não por grupo), e as
-// quartas evitam revanche de grupo (invertem os pares quando possível).
 // ---------------------------------------------------------------------------
 export type KnockoutFormat = 'FINAL' | 'SEMI' | 'QUARTER_WITH_BYES';
 
@@ -70,7 +70,35 @@ export type KnockoutPlan = {
   /** Primeira fase a ser criada: 'F' | 'SF' | 'QF'. */
   firstStage: string;
   firstPairings: Pairing[];
+  /** Aplicar anti-revanche de grupo na SEMIFINAL (regra específica de 2 grupos). */
+  avoidSemiRematch?: boolean;
 };
+
+/**
+ * Monta a semifinal encaixando os byes (campeões) com os vencedores das quartas.
+ * Com `avoidRematch`, escolhe a atribuição que evita que um campeão reencontre,
+ * na semi, alguém que já enfrentou nos grupos (função pura/testável).
+ */
+export function buildSemifinalPairings(
+  byes: [string, string],
+  qfWinners: [string, string],
+  sameGroup: (a: string, b: string) => boolean,
+  avoidRematch: boolean,
+): Pairing[] {
+  const [b0, b1] = byes;
+  const [w0, w1] = qfWinners;
+  const optA: Pairing[] = [
+    { slot: 0, teamAId: b0, teamBId: w0 },
+    { slot: 1, teamAId: b1, teamBId: w1 },
+  ];
+  const optB: Pairing[] = [
+    { slot: 0, teamAId: b0, teamBId: w1 },
+    { slot: 1, teamAId: b1, teamBId: w0 },
+  ];
+  if (!avoidRematch) return optA;
+  const rematches = (o: Pairing[]) => o.filter((p) => sameGroup(p.teamAId, p.teamBId)).length;
+  return rematches(optB) < rematches(optA) ? optB : optA;
+}
 
 /** Ranqueia TODAS as duplas globalmente por vitórias → saldo de games. */
 export function globalRank(
@@ -98,6 +126,31 @@ export function planKnockout(groupStandings: GroupStandings[]): KnockoutPlan {
       groupPosition: 0,
     }));
   const D = ranked.length;
+
+  // Regra específica de 2 GRUPOS (ex.: 16 jog. = 2×4): classificam os 2 primeiros
+  // de cada grupo → SEMIFINAL CRUZADA (1ºA×2ºB, 1ºB×2ºA) → Final + 3º. O cruzamento
+  // garante que duplas do mesmo grupo só possam se reencontrar na final.
+  if (groupStandings.length === 2 && D >= 4) {
+    const at = (g: GroupStandings, pos: number) =>
+      [...g.standings].sort((a, b) => b.wins - a.wins || b.gamesBalance - a.gamesBalance)[pos - 1]
+        ?.teamId;
+    const [gA, gB] = groupStandings;
+    const a1 = at(gA!, 1)!;
+    const a2 = at(gA!, 2)!;
+    const b1 = at(gB!, 1)!;
+    const b2 = at(gB!, 2)!;
+    return {
+      format: 'SEMI',
+      qualifiers: mkQual([a1, b1, a2, b2]),
+      qualifierCount: 4,
+      byes: [],
+      firstStage: 'SF',
+      firstPairings: [
+        { slot: 0, teamAId: a1, teamBId: b2 }, // 1º A × 2º B
+        { slot: 1, teamAId: b1, teamBId: a2 }, // 1º B × 2º A
+      ],
+    };
+  }
 
   if (D >= 6) {
     const [s1, s2, s3, s4, s5, s6] = ranked.slice(0, 6).map((r) => r.teamId) as [

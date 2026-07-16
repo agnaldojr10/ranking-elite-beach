@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_SCORING_TABLE,
+  buildSemifinalPairings,
   computeRoundPlacement,
   globalRank,
   planKnockout,
@@ -87,6 +88,24 @@ describe('planKnockout (classificação flexível — Fase 14)', () => {
     ]);
   });
 
+  it('2 grupos (16 jog.): 2 primeiros de cada grupo → semifinal cruzada', () => {
+    const A = grp('A', [st('A1', 1, 3, 20), st('A2', 2, 2, 12), st('A3', 3, 1, -4), st('A4', 4, 0, -28)]);
+    const B = grp('B', [st('B1', 1, 2, 5), st('B2', 2, 2, 3), st('B3', 3, 1, -3), st('B4', 4, 1, -5)]);
+    const plan = planKnockout([A, B]);
+
+    expect(plan.format).toBe('SEMI');
+    expect(plan.qualifierCount).toBe(4);
+    expect(plan.byes).toEqual([]);
+    expect(plan.firstStage).toBe('SF');
+    // classificados = 2 primeiros de cada grupo
+    expect(new Set(plan.qualifiers.map((q) => q.teamId))).toEqual(new Set(['A1', 'B1', 'A2', 'B2']));
+    // semifinal cruzada: 1ºA×2ºB e 1ºB×2ºA (mesmo grupo só se reencontra na final)
+    expect(plan.firstPairings).toEqual([
+      { slot: 0, teamAId: 'A1', teamBId: 'B2' },
+      { slot: 1, teamAId: 'B1', teamBId: 'A2' },
+    ]);
+  });
+
   it('3 duplas: 2 classificados, Final direta', () => {
     const a = grp('A', [st('T1', 1, 2, 6), st('T2', 2, 1, 0), st('T3', 3, 0, -6)]);
     const plan = planKnockout([a]);
@@ -94,6 +113,33 @@ describe('planKnockout (classificação flexível — Fase 14)', () => {
     expect(plan.qualifierCount).toBe(2);
     expect(plan.firstStage).toBe('F');
     expect(plan.firstPairings).toEqual([{ slot: 0, teamAId: 'T1', teamBId: 'T2' }]);
+  });
+});
+
+describe('buildSemifinalPairings (anti-revanche na semi — 2 grupos)', () => {
+  const sameGroup = (a: string, b: string) => a[0] === b[0]; // 'A2'/'A3' = mesmo grupo
+
+  it('troca a atribuição para o campeão não pegar quem enfrentou no grupo', () => {
+    // byes A1(grupo A), B1(grupo B); vencedores das quartas: A2 (slot0), B2 (slot1)
+    const sf = buildSemifinalPairings(['A1', 'B1'], ['A2', 'B2'], sameGroup, true);
+    expect(sf).toContainEqual({ slot: 0, teamAId: 'A1', teamBId: 'B2' });
+    expect(sf).toContainEqual({ slot: 1, teamAId: 'B1', teamBId: 'A2' });
+  });
+
+  it('mantém o padrão quando já não há revanche', () => {
+    const sf = buildSemifinalPairings(['A1', 'B1'], ['B2', 'A2'], sameGroup, true);
+    expect(sf).toEqual([
+      { slot: 0, teamAId: 'A1', teamBId: 'B2' },
+      { slot: 1, teamAId: 'B1', teamBId: 'A2' },
+    ]);
+  });
+
+  it('sem avoidRematch, usa a atribuição padrão (sem trocar)', () => {
+    const sf = buildSemifinalPairings(['A1', 'B1'], ['A2', 'B2'], sameGroup, false);
+    expect(sf).toEqual([
+      { slot: 0, teamAId: 'A1', teamBId: 'A2' },
+      { slot: 1, teamAId: 'B1', teamBId: 'B2' },
+    ]);
   });
 });
 

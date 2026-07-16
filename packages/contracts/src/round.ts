@@ -373,6 +373,22 @@ export function describeRoundFormat(teams: number, groupSizePref = 3): RoundForm
   const groups = partitionGroups(teams, groupSizePref);
   const groupCount = groups.length;
 
+  // 2 grupos (ex.: 16 jog. = 2×4): 2 primeiros de cada grupo → semifinal cruzada.
+  if (teams >= 6 && groupCount === 2) {
+    return {
+      teams,
+      groups,
+      groupCount,
+      bracketSize: 4,
+      bracketLabel: BRACKET_LABELS[4] ?? 'Semifinal',
+      groupWinners: 4,
+      bestRunnersUp: 0,
+      qualifiers: 4,
+      qualificationRule:
+        'Classificam-se os 2 primeiros de cada grupo (4 duplas). Semifinal cruzada (1ºA×2ºB, 1ºB×2ºA) → Final + disputa de 3º.',
+    };
+  }
+
   if (teams >= 6) {
     return {
       teams,
