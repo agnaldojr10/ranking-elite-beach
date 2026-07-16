@@ -48,11 +48,9 @@ export type Pairing = { slot: number; teamAId: string; teamBId: string };
 // ---------------------------------------------------------------------------
 // Classificação flexível por nº de duplas (Fase 14) — automática, sem config.
 //
-//   2 GRUPOS (ex.: 16 jogadores = 2×4) → regra específica: o CAMPEÃO de cada
-//     grupo vai DIRETO à semifinal (bye); os 4 melhores restantes (ranking
-//     geral) fazem as quartas (melhor×pior, 2º×3º). Na semifinal, o vencedor
-//     da quarta é encaixado no campeão que NÃO enfrentou nos grupos (anti-
-//     revanche), quando possível.
+//   2 GRUPOS (ex.: 16 jogadores = 2×4) → regra específica: classificam os 2
+//     PRIMEIROS de cada grupo (4 duplas) → semifinal CRUZADA (1ºA×2ºB, 1ºB×2ºA)
+//     → Final + 3º. O cruzamento evita revanche de grupo na semi.
 //   OUTROS D ≥ 6 (ex.: 18 = 3×3) → 6 classificados: as 2 melhores no ranking
 //     GERAL vão à semi (bye); a 3ª–6ª fazem as quartas (com anti-revanche nas
 //     quartas). 7º+ eliminados por desempenho.
@@ -129,27 +127,28 @@ export function planKnockout(groupStandings: GroupStandings[]): KnockoutPlan {
     }));
   const D = ranked.length;
 
-  // Regra específica de 2 GRUPOS: campeão de cada grupo vai direto à semi.
-  if (groupStandings.length === 2 && D >= 6) {
-    const winnerOf = (g: GroupStandings) =>
-      [...g.standings].sort((a, b) => b.wins - a.wins || b.gamesBalance - a.gamesBalance)[0]?.teamId;
-    const winnerIds = new Set(groupStandings.map(winnerOf).filter(Boolean) as string[]);
-    // byes = os 2 campeões (ordenados por ranking global; byes[0] = melhor campeão).
-    const byes = ranked.filter((r) => winnerIds.has(r.teamId)).map((r) => r.teamId).slice(0, 2);
-    // quartas = os 4 melhores entre os NÃO-campeões (melhor×pior, 2º×3º).
-    const pool = ranked.filter((r) => !winnerIds.has(r.teamId)).map((r) => r.teamId);
-    const [q1, q2, q3, q4] = pool.slice(0, 4) as [string, string, string, string];
+  // Regra específica de 2 GRUPOS (ex.: 16 jog. = 2×4): classificam os 2 primeiros
+  // de cada grupo → SEMIFINAL CRUZADA (1ºA×2ºB, 1ºB×2ºA) → Final + 3º. O cruzamento
+  // garante que duplas do mesmo grupo só possam se reencontrar na final.
+  if (groupStandings.length === 2 && D >= 4) {
+    const at = (g: GroupStandings, pos: number) =>
+      [...g.standings].sort((a, b) => b.wins - a.wins || b.gamesBalance - a.gamesBalance)[pos - 1]
+        ?.teamId;
+    const [gA, gB] = groupStandings;
+    const a1 = at(gA!, 1)!;
+    const a2 = at(gA!, 2)!;
+    const b1 = at(gB!, 1)!;
+    const b2 = at(gB!, 2)!;
     return {
-      format: 'QUARTER_WITH_BYES',
-      qualifiers: mkQual([...byes, q1, q2, q3, q4]),
-      qualifierCount: 6,
-      byes,
-      firstStage: 'QF',
+      format: 'SEMI',
+      qualifiers: mkQual([a1, b1, a2, b2]),
+      qualifierCount: 4,
+      byes: [],
+      firstStage: 'SF',
       firstPairings: [
-        { slot: 0, teamAId: q1, teamBId: q4 }, // melhor × pior
-        { slot: 1, teamAId: q2, teamBId: q3 }, // 2º × 3º
+        { slot: 0, teamAId: a1, teamBId: b2 }, // 1º A × 2º B
+        { slot: 1, teamAId: b1, teamBId: a2 }, // 1º B × 2º A
       ],
-      avoidSemiRematch: true,
     };
   }
 

@@ -88,24 +88,22 @@ describe('planKnockout (classificação flexível — Fase 14)', () => {
     ]);
   });
 
-  it('2 grupos de 4 (16 jog.): campeão de cada grupo vai à semi (bye), mesmo com paridade', () => {
-    // Grupo B equilibrado: A2 (vice do A) supera B1 (campeão do B) no ranking geral.
+  it('2 grupos (16 jog.): 2 primeiros de cada grupo → semifinal cruzada', () => {
     const A = grp('A', [st('A1', 1, 3, 20), st('A2', 2, 2, 12), st('A3', 3, 1, -4), st('A4', 4, 0, -28)]);
     const B = grp('B', [st('B1', 1, 2, 5), st('B2', 2, 2, 3), st('B3', 3, 1, -3), st('B4', 4, 1, -5)]);
     const plan = planKnockout([A, B]);
 
-    expect(plan.format).toBe('QUARTER_WITH_BYES');
-    expect(plan.avoidSemiRematch).toBe(true);
-    // byes = campeões dos grupos (A1 e B1), NÃO os 2 melhores gerais (A1, A2).
-    expect(new Set(plan.byes)).toEqual(new Set(['A1', 'B1']));
-    // quartas = 4 melhores entre os não-campeões: A2,B2,B3,A3 → melhor×pior, 2º×3º
-    const qf = plan.firstPairings;
-    expect(qf).toHaveLength(2);
-    const flat = qf.flatMap((p) => [p.teamAId, p.teamBId]);
-    expect(new Set(flat)).toEqual(new Set(['A2', 'B2', 'B3', 'A3']));
-    // melhor (A2) x pior (A3); 2º (B2) x 3º (B3) — ranking geral entre os 4
-    expect(qf).toContainEqual({ slot: 0, teamAId: 'A2', teamBId: 'A3' });
-    expect(qf).toContainEqual({ slot: 1, teamAId: 'B2', teamBId: 'B3' });
+    expect(plan.format).toBe('SEMI');
+    expect(plan.qualifierCount).toBe(4);
+    expect(plan.byes).toEqual([]);
+    expect(plan.firstStage).toBe('SF');
+    // classificados = 2 primeiros de cada grupo
+    expect(new Set(plan.qualifiers.map((q) => q.teamId))).toEqual(new Set(['A1', 'B1', 'A2', 'B2']));
+    // semifinal cruzada: 1ºA×2ºB e 1ºB×2ºA (mesmo grupo só se reencontra na final)
+    expect(plan.firstPairings).toEqual([
+      { slot: 0, teamAId: 'A1', teamBId: 'B2' },
+      { slot: 1, teamAId: 'B1', teamBId: 'A2' },
+    ]);
   });
 
   it('3 duplas: 2 classificados, Final direta', () => {

@@ -373,6 +373,22 @@ export function describeRoundFormat(teams: number, groupSizePref = 3): RoundForm
   const groups = partitionGroups(teams, groupSizePref);
   const groupCount = groups.length;
 
+  // 2 grupos (ex.: 16 jog. = 2×4): 2 primeiros de cada grupo → semifinal cruzada.
+  if (teams >= 6 && groupCount === 2) {
+    return {
+      teams,
+      groups,
+      groupCount,
+      bracketSize: 4,
+      bracketLabel: BRACKET_LABELS[4] ?? 'Semifinal',
+      groupWinners: 4,
+      bestRunnersUp: 0,
+      qualifiers: 4,
+      qualificationRule:
+        'Classificam-se os 2 primeiros de cada grupo (4 duplas). Semifinal cruzada (1ºA×2ºB, 1ºB×2ºA) → Final + disputa de 3º.',
+    };
+  }
+
   if (teams >= 6) {
     return {
       teams,
@@ -384,9 +400,7 @@ export function describeRoundFormat(teams: number, groupSizePref = 3): RoundForm
       bestRunnersUp: Math.max(0, 6 - groupCount),
       qualifiers: 6,
       qualificationRule:
-        groupCount === 2
-          ? 'O campeão de cada grupo vai direto à semifinal; os 4 melhores restantes (ranking geral) fazem as quartas (melhor×pior, 2º×3º). Na semi, o vencedor da quarta enfrenta o campeão que não pegou no grupo (anti-revanche). Depois Final + 3º.'
-          : 'As 6 melhores duplas (ranking geral por vitórias e saldo) avançam: a 1ª e a 2ª vão direto à semifinal; a 3ª à 6ª disputam as quartas por 2 vagas (evitando revanche de grupo). Depois Final + disputa de 3º.',
+        'As 6 melhores duplas (ranking geral por vitórias e saldo) avançam: a 1ª e a 2ª vão direto à semifinal; a 3ª à 6ª disputam as quartas por 2 vagas (evitando revanche de grupo). Depois Final + disputa de 3º.',
     };
   }
 
