@@ -108,6 +108,14 @@ export async function generateKnockoutAction(roundId: string): Promise<void> {
   revalidatePath(`/rounds/${roundId}`);
 }
 
+/** Reverte o mata-mata (apaga chave + colocação; volta a rodada p/ em andamento). */
+export async function revertKnockoutAction(roundId: string): Promise<void> {
+  await apiFetch(`/rounds/${roundId}/knockout`, { method: 'DELETE' });
+  revalidatePath(`/rounds/${roundId}/knockout`);
+  revalidatePath(`/rounds/${roundId}/results`);
+  revalidatePath(`/rounds/${roundId}`);
+}
+
 export async function scheduleMatchAction(
   matchId: string,
   roundId: string,

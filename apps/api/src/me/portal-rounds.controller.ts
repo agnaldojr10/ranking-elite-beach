@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
   BulkCreateRegistrationSchema,
@@ -132,6 +132,14 @@ export class PortalRoundsController {
     @Param('id') id: string,
   ): Promise<KnockoutView> {
     return this.knockout.generate(user.clubId, id);
+  }
+
+  @Delete('rounds/:id/knockout')
+  revertKnockout(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+  ): Promise<KnockoutView> {
+    return this.knockout.revert(user.clubId, id);
   }
 
   @Get('rounds/:id/result')

@@ -71,6 +71,14 @@ export async function generateKnockoutAction(roundId: string): Promise<ActionSta
   return { ok: true };
 }
 
+/** Reverte o mata-mata (apaga chave + colocação; volta a rodada p/ em andamento). */
+export async function revertKnockoutAction(roundId: string): Promise<ActionState> {
+  const res = await apiFetch(`/me/rounds/${roundId}/knockout`, { method: 'DELETE' });
+  if (!res.ok) return { error: res.message };
+  revalidatePath(`/rodada/${roundId}`);
+  return { ok: true };
+}
+
 /** Gera o texto do relatório (colocação + ranking) para compartilhar. */
 export async function getReportAction(
   roundId: string,
