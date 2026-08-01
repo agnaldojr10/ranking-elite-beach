@@ -151,4 +151,9 @@ export class PortalRoundsController {
   report(@CurrentUser() user: JwtPayload, @Param('id') id: string): Promise<RoundReport> {
     return this.portal.report(user.clubId, id);
   }
+
+  @Get('rounds/:id/draw-report')
+  drawReport(@CurrentUser() user: JwtPayload, @Param('id') id: string): Promise<RoundReport> {
+    return this.portal.drawReport(user.clubId, id);
+  }
 }

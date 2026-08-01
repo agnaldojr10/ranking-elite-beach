@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  buildDrawReport,
   buildRoundReport,
   roundLabel,
   type Round,
@@ -9,6 +10,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { RankingService } from '../ranking/ranking.service';
 import { KnockoutService } from '../rounds/knockout.service';
+import { MatchesService } from '../rounds/matches.service';
 import { RoundsService } from '../rounds/rounds.service';
 
 /**
@@ -23,7 +25,25 @@ export class PortalRoundsService {
     private readonly rounds: RoundsService,
     private readonly knockout: KnockoutService,
     private readonly ranking: RankingService,
+    private readonly matches: MatchesService,
   ) {}
+
+  /** Texto do sorteio (grupos + duplas) para enviar no WhatsApp após sortear. */
+  async drawReport(clubId: string, roundId: string): Promise<RoundReport> {
+    const round = await this.rounds.get(clubId, roundId);
+    const standings = await this.matches.getStandings(clubId, roundId);
+    const groups = standings.map((g) => ({
+      name: g.groupName,
+      pairs: g.standings.map((s) => s.playerNames),
+    }));
+    const text = buildDrawReport({
+      championshipName: round.championshipName,
+      roundLabel: roundLabel(round),
+      date: round.date,
+      groups,
+    });
+    return { text };
+  }
 
   /** Rodadas do campeonato ATIVO do clube (o "dia" que o atleta vai operar). */
   async listRounds(clubId: string): Promise<Round[]> {

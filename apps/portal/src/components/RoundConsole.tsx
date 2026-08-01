@@ -17,6 +17,7 @@ import type { EligiblePlayer } from '@/lib/rounds';
 import {
   confirmDrawAction,
   generateKnockoutAction,
+  getDrawReportAction,
   getReportAction,
   registerPresentAction,
   revertKnockoutAction,
@@ -70,6 +71,15 @@ export function RoundConsole({
         />
       )}
 
+      {hasDraw && (
+        <ShareText
+          title="Duplas sorteadas"
+          description="Gera a lista dos grupos e duplas para enviar no grupo do WhatsApp logo após o sorteio."
+          buttonLabel="Gerar lista das duplas"
+          load={() => getDrawReportAction(round.id)}
+        />
+      )}
+
       {groupsDone && !knockoutGenerated && !finished && (
         <GenerateKnockout roundId={round.id} />
       )}
@@ -80,7 +90,12 @@ export function RoundConsole({
 
       {finished && result.length > 0 && <ResultSection result={result} />}
 
-      <ReportShare roundId={round.id} />
+      <ShareText
+        title="Relatório do dia"
+        description="Gera o texto com a colocação e o ranking atualizado para enviar no grupo do WhatsApp."
+        buttonLabel="Gerar relatório"
+        load={() => getReportAction(round.id)}
+      />
     </div>
   );
 }
@@ -511,18 +526,28 @@ function ResultSection({ result }: { result: RoundResultView[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Relatório / WhatsApp
+// Compartilhar texto no WhatsApp (relatório do dia OU duplas sorteadas)
 // ---------------------------------------------------------------------------
-function ReportShare({ roundId }: { roundId: string }) {
+function ShareText({
+  title,
+  description,
+  buttonLabel,
+  load,
+}: {
+  title: string;
+  description: string;
+  buttonLabel: string;
+  load: () => Promise<{ text?: string; error?: string }>;
+}) {
   const [text, setText] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [pending, start] = useTransition();
 
-  const load = () => {
+  const run = () => {
     setMsg(null);
     start(async () => {
-      const res = await getReportAction(roundId);
+      const res = await load();
       if (res.error) setMsg(res.error);
       else setText(res.text ?? '');
     });
@@ -543,13 +568,11 @@ function ReportShare({ roundId }: { roundId: string }) {
 
   return (
     <section className={card}>
-      <h2 className="font-bold text-ink">Relatório do dia</h2>
-      <p className="mt-1 text-sm text-ink-2">
-        Gera o texto com a colocação e o ranking atualizado para enviar no grupo do WhatsApp.
-      </p>
+      <h2 className="font-bold text-ink">{title}</h2>
+      <p className="mt-1 text-sm text-ink-2">{description}</p>
       {!text ? (
-        <button className={`${btn} mt-3`} disabled={pending} onClick={load}>
-          {pending ? 'Gerando…' : 'Gerar relatório'}
+        <button className={`${btn} mt-3`} disabled={pending} onClick={run}>
+          {pending ? 'Gerando…' : buttonLabel}
         </button>
       ) : (
         <div className="mt-3">
@@ -563,7 +586,7 @@ function ReportShare({ roundId }: { roundId: string }) {
             <button className={btnGhost} onClick={copy}>
               {copied ? 'Copiado!' : 'Copiar'}
             </button>
-            <button className={btnGhost} onClick={load} disabled={pending}>
+            <button className={btnGhost} onClick={run} disabled={pending}>
               Atualizar
             </button>
           </div>
