@@ -8,6 +8,7 @@ import {
   type RoundResultView,
 } from '@reb/contracts';
 import { MatchResultForm } from '@/components/MatchResultForm';
+import { RevertKnockoutButton } from '@/components/RevertKnockoutButton';
 import { getKnockout, getRound, getRoundMatches, getRoundResult } from '@/lib/rounds';
 import { generateKnockoutAction } from '../../actions';
 
@@ -79,6 +80,13 @@ export default async function RoundKnockoutPage({ params }: { params: { id: stri
           </div>
         ) : (
           <div className="space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-line bg-surface p-4 shadow-tile">
+              <p className="text-sm text-ink-2">
+                Lançou um placar de grupo errado e o mata-mata saiu incorreto? Reverta, corrija o
+                resultado em Resultados e gere o mata-mata de novo.
+              </p>
+              <RevertKnockoutButton roundId={round.id} />
+            </div>
             {stages.map((stage) => (
               <StageBlock
                 key={stage}

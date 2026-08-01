@@ -63,6 +63,29 @@ export class KnockoutService {
     return this.getKnockout(clubId, roundId);
   }
 
+  /**
+   * Reverte o mata-mata: apaga os jogos de mata-mata e a colocação/pontos, e
+   * volta a rodada para "em andamento". Útil quando um placar de grupo foi
+   * lançado errado e o mata-mata saiu incorreto — corrige o grupo e gera de novo.
+   * Mantém intactos as duplas, o sorteio e a fase de grupos.
+   */
+  async revert(clubId: string, roundId: string): Promise<KnockoutView> {
+    await this.ensureRound(clubId, roundId, false);
+    const existing = await this.prisma.match.count({ where: { phase: 'KNOCKOUT', roundId } });
+    if (existing === 0) {
+      throw new ConflictException({
+        error: { code: 'KNOCKOUT_NOT_GENERATED', message: 'Esta rodada ainda não tem mata-mata gerado' },
+      });
+    }
+    await this.prisma.$transaction(async (tx) => {
+      await tx.matchResultLog.deleteMany({ where: { match: { phase: 'KNOCKOUT', roundId } } });
+      await tx.match.deleteMany({ where: { phase: 'KNOCKOUT', roundId } });
+      await tx.roundResult.deleteMany({ where: { roundId } });
+      await tx.round.update({ where: { id: roundId }, data: { status: 'IN_PROGRESS' } });
+    });
+    return this.getKnockout(clubId, roundId);
+  }
+
   /** Avança o mata-mata após um resultado; cria próxima fase ou finaliza a rodada. */
   async progress(clubId: string, roundId: string): Promise<void> {
     const matches = await this.prisma.match.findMany({

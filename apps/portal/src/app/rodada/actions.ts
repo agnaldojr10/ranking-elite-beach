@@ -71,11 +71,28 @@ export async function generateKnockoutAction(roundId: string): Promise<ActionSta
   return { ok: true };
 }
 
+/** Reverte o mata-mata (apaga chave + colocação; volta a rodada p/ em andamento). */
+export async function revertKnockoutAction(roundId: string): Promise<ActionState> {
+  const res = await apiFetch(`/me/rounds/${roundId}/knockout`, { method: 'DELETE' });
+  if (!res.ok) return { error: res.message };
+  revalidatePath(`/rodada/${roundId}`);
+  return { ok: true };
+}
+
 /** Gera o texto do relatório (colocação + ranking) para compartilhar. */
 export async function getReportAction(
   roundId: string,
 ): Promise<{ text?: string; error?: string }> {
   const res = await apiFetch<RoundReport>(`/me/rounds/${roundId}/report`);
+  if (!res.ok) return { error: res.message };
+  return { text: res.data.text };
+}
+
+/** Gera o texto do sorteio (grupos + duplas) para compartilhar. */
+export async function getDrawReportAction(
+  roundId: string,
+): Promise<{ text?: string; error?: string }> {
+  const res = await apiFetch<RoundReport>(`/me/rounds/${roundId}/draw-report`);
   if (!res.ok) return { error: res.message };
   return { text: res.data.text };
 }

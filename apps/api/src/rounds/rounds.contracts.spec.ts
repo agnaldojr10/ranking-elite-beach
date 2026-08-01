@@ -6,6 +6,7 @@ import {
   MatchFormatSchema,
   RecordClassificationSchema,
   buildClassificationTeams,
+  buildDrawReport,
   buildRoundReport,
   computeRoundReadiness,
   describeRoundFormat,
@@ -183,6 +184,35 @@ describe('buildRoundReport (texto para WhatsApp)', () => {
       rankingLimit: 10,
     });
     expect(text).toContain('… e mais 2.');
+  });
+});
+
+describe('buildDrawReport (texto do sorteio para WhatsApp)', () => {
+  it('lista grupos e duplas', () => {
+    const text = buildDrawReport({
+      championshipName: 'Ranking Elite Beach Tennis',
+      roundLabel: 'Rodada 6',
+      date: '2026-07-24',
+      groups: [
+        { name: 'A', pairs: [['Éberson', 'Yan'], ['Mateus', 'Igor']] },
+        { name: 'B', pairs: [['Fabiano', 'Lucas']] },
+      ],
+    });
+    expect(text).toContain('Rodada 6 — 24/07/2026 · Sorteio das duplas');
+    expect(text).toContain('📋 Grupo A');
+    expect(text).toContain('• Éberson & Yan');
+    expect(text).toContain('📋 Grupo B');
+    expect(text).toContain('• Fabiano & Lucas');
+  });
+
+  it('avisa quando ainda não há grupos', () => {
+    const text = buildDrawReport({
+      championshipName: 'X',
+      roundLabel: 'Rodada 1',
+      date: null,
+      groups: [],
+    });
+    expect(text).toContain('não confirmado');
   });
 });
 

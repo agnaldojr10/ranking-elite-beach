@@ -500,3 +500,30 @@ export function buildRoundReport(input: {
   lines.push('', 'Ranking Elite Beach 🏝️');
   return lines.join('\n');
 }
+
+/**
+ * Monta o texto do SORTEIO da rodada (grupos + duplas) para enviar no WhatsApp
+ * logo após sortear. Função pura/testável.
+ */
+export function buildDrawReport(input: {
+  championshipName: string;
+  roundLabel: string;
+  date: string | null;
+  groups: { name: string; pairs: [string, string][] }[];
+}): string {
+  const date = formatReportDate(input.date);
+  const lines: string[] = [];
+  lines.push(`🏖️ ${input.championshipName}`);
+  lines.push(`🎾 ${input.roundLabel}${date ? ` — ${date}` : ''} · Sorteio das duplas`);
+
+  for (const g of input.groups) {
+    lines.push('', `📋 Grupo ${g.name}`);
+    for (const p of g.pairs) lines.push(`• ${p.filter(Boolean).join(' & ')}`);
+  }
+  if (input.groups.length === 0) {
+    lines.push('', '_Sorteio ainda não confirmado._');
+  }
+
+  lines.push('', 'Bora pro jogo! 🎾🏝️');
+  return lines.join('\n');
+}
