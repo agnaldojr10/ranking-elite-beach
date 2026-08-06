@@ -5,6 +5,7 @@ import {
   ConfirmDrawSchema,
   CreateRegistrationSchema,
   CreateRoundSchema,
+  PairDrawPlayersSchema,
   RecordClassificationSchema,
   SimulateDrawSchema,
   UpdateRoundSchema,
@@ -12,6 +13,7 @@ import {
   type BulkCreateRegistration,
   type ConfirmDraw,
   type ConfirmedDraw,
+  type PairDrawPlayers,
   type CreateRegistration,
   type CreateRound,
   type DrawResult,
@@ -159,6 +161,17 @@ export class RoundsController {
   @Get('rounds/:id/draw')
   getDraw(@CurrentUser() user: JwtPayload, @Param('id') id: string): Promise<ConfirmedDraw> {
     return this.draw.getConfirmed(user.clubId, id);
+  }
+
+  @Patch('rounds/:id/draw/pair')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN', 'ORGANIZER')
+  pairDraw(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(PairDrawPlayersSchema)) dto: PairDrawPlayers,
+  ): Promise<ConfirmedDraw> {
+    return this.draw.pairTogether(user.clubId, id, dto.playerAId, dto.playerBId);
   }
 
   @Delete('rounds/:id/draw')

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   MATCH_STATUS_LABELS,
   ROUND_STATUS_LABELS,
+  type ConfirmedDraw,
   type GroupStandings,
   type KnockoutView,
   type MatchTeamRef,
@@ -19,6 +20,7 @@ import {
   generateKnockoutAction,
   getDrawReportAction,
   getReportAction,
+  pairDrawAction,
   quickAddPlayerAction,
   registerPresentAction,
   revertKnockoutAction,
@@ -37,6 +39,7 @@ export function RoundConsole({
   standings,
   knockout,
   result,
+  draw,
 }: {
   round: Round;
   eligible: EligiblePlayer[];
@@ -44,11 +47,15 @@ export function RoundConsole({
   standings: GroupStandings[];
   knockout: KnockoutView | null;
   result: RoundResultView[];
+  draw: ConfirmedDraw | null;
 }) {
   const hasDraw = matches.length > 0;
   const finished = round.status === 'FINISHED';
   const groupsDone = hasDraw && matches.every((m) => m.status !== 'PENDING');
   const knockoutGenerated = !!knockout?.generated;
+  // Editar duplas só faz sentido antes de lançar placares/gerar mata-mata.
+  const noResults = matches.every((m) => m.status === 'PENDING');
+  const canEditPairs = hasDraw && noResults && !knockoutGenerated && !finished && !!draw;
 
   return (
     <div className="space-y-4">
@@ -71,6 +78,8 @@ export function RoundConsole({
           numSets={round.matchFormat.sets}
         />
       )}
+
+      {canEditPairs && draw && <PairEditor roundId={round.id} draw={draw} />}
 
       {hasDraw && (
         <ShareText
@@ -638,6 +647,78 @@ function ShareText({
         </div>
       )}
       {msg && <p className="mt-3 text-sm text-danger">{msg}</p>}
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Editar duplas (formar dupla forçada pós-sorteio)
+// ---------------------------------------------------------------------------
+function PairEditor({ roundId, draw }: { roundId: string; draw: ConfirmedDraw }) {
+  const router = useRouter();
+  const [a, setA] = useState('');
+  const [b, setB] = useState('');
+  const [msg, setMsg] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+
+  const players = useMemo(
+    () =>
+      draw.teams
+        .flatMap((t) => t.players.map((id, i) => ({ id, name: t.playerNames[i] ?? '?' })))
+        .sort((x, y) => x.name.localeCompare(y.name)),
+    [draw],
+  );
+
+  const submit = () => {
+    setMsg(null);
+    if (!a || !b || a === b) {
+      setMsg('Escolha dois jogadores diferentes.');
+      return;
+    }
+    start(async () => {
+      const res = await pairDrawAction(roundId, a, b);
+      if (res.error) setMsg(res.error);
+      else {
+        setA('');
+        setB('');
+        router.refresh();
+      }
+    });
+  };
+
+  const sel =
+    'h-10 min-w-[9rem] flex-1 rounded-xl border border-line bg-bg/40 px-2 text-sm text-ink outline-none focus:border-ocean';
+
+  return (
+    <section className={card}>
+      <h2 className="font-bold text-ink">Editar duplas</h2>
+      <p className="mt-1 text-sm text-ink-2">
+        Força dois jogadores a serem dupla — cada um troca com o parceiro atual do outro. Só antes de
+        lançar placares.
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <select value={a} onChange={(e) => setA(e.target.value)} className={sel}>
+          <option value="">Jogador 1…</option>
+          {players.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <span className="text-muted">+</span>
+        <select value={b} onChange={(e) => setB(e.target.value)} className={sel}>
+          <option value="">Jogador 2…</option>
+          {players.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <button className={btn} disabled={pending || !a || !b} onClick={submit}>
+          {pending ? 'Formando…' : 'Formar dupla'}
+        </button>
+      </div>
+      {msg && <p className="mt-2 text-sm text-danger">{msg}</p>}
     </section>
   );
 }
