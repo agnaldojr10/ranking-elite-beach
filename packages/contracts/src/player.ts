@@ -78,6 +78,8 @@ export const PlayerSchema = z.object({
   status: PlayerStatusSchema,
   type: PlayerTypeSchema,
   createdAt: z.string(),
+  /** E-mail da conta do Portal do Jogador, se o atleta já reivindicou (senão null). */
+  accountEmail: z.string().nullable(),
 });
 export type Player = z.infer<typeof PlayerSchema>;
 

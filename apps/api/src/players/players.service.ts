@@ -8,9 +8,12 @@ import {
   type PlayerStatus,
   type UpdatePlayer,
 } from '@reb/contracts';
-import type { Player } from '@reb/db';
 import { Prisma } from '@reb/db';
 import { PrismaService } from '../prisma/prisma.service';
+
+/** Inclui o e-mail da conta do portal (User vinculado), se houver. */
+const playerInclude = { user: { select: { email: true } } } satisfies Prisma.PlayerInclude;
+type PlayerRow = Prisma.PlayerGetPayload<{ include: typeof playerInclude }>;
 
 @Injectable()
 export class PlayersService {
@@ -30,6 +33,7 @@ export class PlayersService {
         orderBy: { name: 'asc' },
         skip: (query.page - 1) * query.pageSize,
         take: query.pageSize,
+        include: playerInclude,
       }),
       this.prisma.player.count({ where }),
     ]);
@@ -43,7 +47,7 @@ export class PlayersService {
   }
 
   async get(clubId: string, id: string): Promise<PlayerDto> {
-    const player = await this.prisma.player.findFirst({ where: { id, clubId } });
+    const player = await this.prisma.player.findFirst({ where: { id, clubId }, include: playerInclude });
     if (!player) throw this.notFound();
     return this.toDto(player);
   }
@@ -60,6 +64,7 @@ export class PlayersService {
         status: dto.status,
         type: dto.type,
       },
+      include: playerInclude,
     });
     return this.toDto(player);
   }
@@ -77,13 +82,18 @@ export class PlayersService {
         ...(dto.status !== undefined ? { status: dto.status } : {}),
         ...(dto.type !== undefined ? { type: dto.type } : {}),
       },
+      include: playerInclude,
     });
     return this.toDto(player);
   }
 
   async setStatus(clubId: string, id: string, status: PlayerStatus): Promise<PlayerDto> {
     await this.ensureExists(clubId, id);
-    const player = await this.prisma.player.update({ where: { id }, data: { status } });
+    const player = await this.prisma.player.update({
+      where: { id },
+      data: { status },
+      include: playerInclude,
+    });
     return this.toDto(player);
   }
 
@@ -92,7 +102,7 @@ export class PlayersService {
     if (!exists) throw this.notFound();
   }
 
-  private toDto(p: Player): PlayerDto {
+  private toDto(p: PlayerRow): PlayerDto {
     const birthDate = p.birthDate.toISOString().slice(0, 10);
     return {
       id: p.id,
@@ -106,6 +116,7 @@ export class PlayersService {
       status: p.status,
       type: p.type,
       createdAt: p.createdAt.toISOString(),
+      accountEmail: p.user?.email ?? null,
     };
   }
 
