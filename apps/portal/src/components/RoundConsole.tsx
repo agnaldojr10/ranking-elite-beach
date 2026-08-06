@@ -19,6 +19,7 @@ import {
   generateKnockoutAction,
   getDrawReportAction,
   getReportAction,
+  quickAddPlayerAction,
   registerPresentAction,
   revertKnockoutAction,
   saveResultAction,
@@ -113,6 +114,10 @@ function PresentAndDraw({ round, eligible }: { round: Round; eligible: EligibleP
   const [preview, setPreview] = useState<DrawResult | null>(null);
   const [drawing, setDrawing] = useState(false);
 
+  const [qaName, setQaName] = useState('');
+  const [qaGuest, setQaGuest] = useState(false);
+  const [qaPending, qaStart] = useTransition();
+
   const registered = round.registrations ?? [];
   const filtered = useMemo(
     () => eligible.filter((p) => p.name.toLowerCase().includes(query.trim().toLowerCase())),
@@ -160,12 +165,52 @@ function PresentAndDraw({ round, eligible }: { round: Round; eligible: EligibleP
     });
   };
 
+  const quickAdd = () => {
+    if (qaName.trim().length < 2) return;
+    setMsg(null);
+    qaStart(async () => {
+      const res = await quickAddPlayerAction(round.id, qaName.trim(), qaGuest ? 'GUEST' : 'REGULAR');
+      if (res.error) setMsg(res.error);
+      else {
+        setQaName('');
+        setQaGuest(false);
+        router.refresh();
+      }
+    });
+  };
+
   return (
     <section className={card}>
       <h2 className="font-bold text-ink">Presentes ({registered.length})</h2>
       <p className="mt-1 text-sm text-ink-2">
         Marque quem chegou. {round.readiness.canDraw ? 'Pronto para sortear.' : round.readiness.message}
       </p>
+
+      {/* Cadastro rápido de quem não está na lista */}
+      <div className="mt-4 rounded-2xl border border-line/60 bg-bg/30 p-3">
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
+          Não está na lista? Cadastre na hora
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            value={qaName}
+            onChange={(e) => setQaName(e.target.value)}
+            placeholder="Nome do atleta"
+            className="h-10 min-w-[10rem] flex-1 rounded-xl border border-line bg-bg/40 px-3 text-sm text-ink outline-none focus:border-ocean"
+          />
+          <label className="flex items-center gap-1.5 text-xs text-ink-2">
+            <input type="checkbox" checked={qaGuest} onChange={(e) => setQaGuest(e.target.checked)} />
+            Convidado
+          </label>
+          <button className={btn} disabled={qaPending || qaName.trim().length < 2} onClick={quickAdd}>
+            {qaPending ? 'Cadastrando…' : 'Cadastrar e marcar presente'}
+          </button>
+        </div>
+        <p className="mt-1.5 text-[11px] text-muted">
+          Entra já como presente. &quot;Convidado&quot; joga mas não pontua. Complete o cadastro
+          depois no backoffice.
+        </p>
+      </div>
 
       {eligible.length > 0 && (
         <div className="mt-4">

@@ -1,7 +1,13 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { BulkCreateRegistrationSchema, type DrawResult, type RoundReport } from '@reb/contracts';
+import {
+  BulkCreateRegistrationSchema,
+  QuickAddPlayerSchema,
+  type DrawResult,
+  type PlayerType,
+  type RoundReport,
+} from '@reb/contracts';
 import { apiFetch } from '@/lib/api';
 
 export type ActionState = { ok?: boolean; error?: string };
@@ -22,6 +28,23 @@ export async function registerPresentAction(
   if (!res.ok) return { error: res.message };
   revalidatePath(`/rodada/${roundId}`);
   return { ok: true, added: res.data.added };
+}
+
+/** Cadastro rápido: cria o atleta e já o marca presente (CONFIRMADO) na rodada. */
+export async function quickAddPlayerAction(
+  roundId: string,
+  name: string,
+  type: PlayerType,
+): Promise<ActionState> {
+  const parsed = QuickAddPlayerSchema.safeParse({ name, type });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Nome inválido' };
+  const res = await apiFetch(`/me/rounds/${roundId}/players`, {
+    method: 'POST',
+    body: JSON.stringify(parsed.data),
+  });
+  if (!res.ok) return { error: res.message };
+  revalidatePath(`/rodada/${roundId}`);
+  return { ok: true };
 }
 
 /** Sorteia (simulação — não grava). Devolve a prévia para o atleta confirmar. */
