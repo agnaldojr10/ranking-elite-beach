@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
   BulkCreateRegistrationSchema,
   ConfirmDrawSchema,
+  QuickAddPlayerSchema,
   RegisterMatchResultSchema,
   SimulateDrawSchema,
   type BulkCreateRegistration,
@@ -13,6 +14,8 @@ import {
   type JwtPayload,
   type KnockoutView,
   type MatchView,
+  type Player,
+  type QuickAddPlayer,
   type RegisterMatchResult,
   type Round,
   type RoundReport,
@@ -68,6 +71,15 @@ export class PortalRoundsController {
     @Param('id') id: string,
   ): Promise<{ id: string; name: string; skillLevel: string }[]> {
     return this.portal.eligiblePlayers(user.clubId, id);
+  }
+
+  @Post('rounds/:id/players')
+  quickAddPlayer(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(QuickAddPlayerSchema)) dto: QuickAddPlayer,
+  ): Promise<Player> {
+    return this.portal.quickAddPlayer(user.clubId, id, dto);
   }
 
   @Post('rounds/:id/registrations/bulk')

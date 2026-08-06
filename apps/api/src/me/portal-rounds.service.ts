@@ -3,14 +3,18 @@ import {
   buildDrawReport,
   buildRoundReport,
   roundLabel,
+  type Player,
+  type QuickAddPlayer,
   type Round,
   type RoundReport,
   type SkillLevel,
 } from '@reb/contracts';
 import { PrismaService } from '../prisma/prisma.service';
+import { PlayersService } from '../players/players.service';
 import { RankingService } from '../ranking/ranking.service';
 import { KnockoutService } from '../rounds/knockout.service';
 import { MatchesService } from '../rounds/matches.service';
+import { RegistrationsService } from '../rounds/registrations.service';
 import { RoundsService } from '../rounds/rounds.service';
 
 /**
@@ -26,7 +30,28 @@ export class PortalRoundsService {
     private readonly knockout: KnockoutService,
     private readonly ranking: RankingService,
     private readonly matches: MatchesService,
+    private readonly players: PlayersService,
+    private readonly registrations: RegistrationsService,
   ) {}
+
+  /**
+   * Cadastro rápido na operação da rodada: cria o atleta (dados padrão, dá para
+   * completar depois) e já o inscreve como CONFIRMADO na rodada. Escopado ao clube.
+   */
+  async quickAddPlayer(clubId: string, roundId: string, dto: QuickAddPlayer): Promise<Player> {
+    await this.rounds.get(clubId, roundId); // valida rodada do clube
+    const player = await this.players.create(clubId, {
+      name: dto.name,
+      birthDate: '2000-01-01', // placeholder; a organização completa depois
+      photoUrl: '',
+      phone: '',
+      skillLevel: 'INTERMEDIATE',
+      status: 'ACTIVE',
+      type: dto.type,
+    });
+    await this.registrations.create(clubId, roundId, { playerId: player.id, status: 'CONFIRMED' });
+    return player;
+  }
 
   /** Texto do sorteio (grupos + duplas) para enviar no WhatsApp após sortear. */
   async drawReport(clubId: string, roundId: string): Promise<RoundReport> {

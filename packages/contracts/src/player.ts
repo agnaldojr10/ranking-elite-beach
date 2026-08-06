@@ -54,6 +54,16 @@ export type CreatePlayer = z.infer<typeof CreatePlayerSchema>;
 export const UpdatePlayerSchema = CreatePlayerSchema.partial();
 export type UpdatePlayer = z.infer<typeof UpdatePlayerSchema>;
 
+/**
+ * Cadastro rápido pelo Portal, durante a operação da rodada: só o nome (+ tipo).
+ * Os demais dados entram com padrão e podem ser completados depois no backoffice.
+ */
+export const QuickAddPlayerSchema = z.object({
+  name: z.string().trim().min(2, 'Nome muito curto').max(120),
+  type: PlayerTypeSchema.default('REGULAR'),
+});
+export type QuickAddPlayer = z.infer<typeof QuickAddPlayerSchema>;
+
 export const UpdatePlayerStatusSchema = z.object({ status: PlayerStatusSchema });
 export type UpdatePlayerStatus = z.infer<typeof UpdatePlayerStatusSchema>;
 
@@ -78,6 +88,8 @@ export const PlayerSchema = z.object({
   status: PlayerStatusSchema,
   type: PlayerTypeSchema,
   createdAt: z.string(),
+  /** E-mail da conta do Portal do Jogador, se o atleta já reivindicou (senão null). */
+  accountEmail: z.string().nullable(),
 });
 export type Player = z.infer<typeof PlayerSchema>;
 
