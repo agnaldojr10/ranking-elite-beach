@@ -253,6 +253,115 @@ export class DrawService {
     return { ok: true };
   }
 
+  /**
+   * Força dois jogadores a serem dupla, trocando cada um com o parceiro atual do
+   * outro. Mantém os grupos/jogos (só muda quem está em cada dupla) e corrige o
+   * histórico de parceria/adversário. Bloqueado se já houver placares/mata-mata.
+   */
+  async pairTogether(
+    clubId: string,
+    roundId: string,
+    playerAId: string,
+    playerBId: string,
+  ): Promise<ConfirmedDraw> {
+    const draw = await this.prisma.draw.findFirst({
+      where: { roundId, round: { championship: { season: { clubId } } } },
+      include: {
+        round: { select: { kind: true } },
+        teams: { include: { players: true } },
+        groups: { include: { matches: true } },
+      },
+    });
+    if (!draw) {
+      throw new NotFoundException({
+        error: { code: 'DRAW_NOT_FOUND', message: 'Rodada ainda não tem sorteio confirmado' },
+      });
+    }
+    const hasResults = draw.groups.some((g) => g.matches.some((m) => m.status !== 'PENDING'));
+    const hasKnockout = await this.prisma.match.count({ where: { phase: 'KNOCKOUT', roundId } });
+    if (hasResults || hasKnockout > 0) {
+      throw new ConflictException({
+        error: {
+          code: 'DRAW_LOCKED',
+          message: 'Não dá para editar as duplas: já há placares ou mata-mata nesta rodada.',
+        },
+      });
+    }
+
+    const teamOf = (playerId: string) =>
+      draw.teams.find((t) => t.players.some((p) => p.playerId === playerId));
+    const tA = teamOf(playerAId);
+    const tB = teamOf(playerBId);
+    if (!tA || !tB) {
+      throw new NotFoundException({
+        error: { code: 'PLAYER_NOT_IN_DRAW', message: 'Jogador não está nas duplas desta rodada' },
+      });
+    }
+    if (tA.id === tB.id) {
+      throw new ConflictException({
+        error: { code: 'ALREADY_PARTNERS', message: 'Esses dois já são dupla' },
+      });
+    }
+    const partnerOfA = tA.players.find((p) => p.playerId !== playerAId)?.playerId;
+    if (!partnerOfA) {
+      throw new ConflictException({
+        error: { code: 'INCOMPLETE_TEAM', message: 'Dupla incompleta — não é possível trocar' },
+      });
+    }
+
+    // Composições ANTES (para reverter o histórico).
+    const oldTeamPlayers = new Map<string, [string, string]>(
+      draw.teams.map((t) => [t.id, t.players.map((p) => p.playerId) as [string, string]]),
+    );
+    const matches = draw.groups.flatMap((g) => g.matches);
+
+    // Composições DEPOIS: em tA fica [A, B]; parceiro de A vai para tB.
+    const newTeamPlayers = new Map(oldTeamPlayers);
+    newTeamPlayers.set(tA.id, [playerAId, playerBId]);
+    newTeamPlayers.set(
+      tB.id,
+      (oldTeamPlayers.get(tB.id) as [string, string]).map((p) =>
+        p === playerBId ? partnerOfA : p,
+      ) as [string, string],
+    );
+
+    await this.prisma.$transaction(async (tx) => {
+      if (draw.round.kind !== 'FINAL_PHASE') {
+        // Reverte o histórico das composições antigas.
+        await this.history.applyDrawDeltas(
+          tx,
+          clubId,
+          roundId,
+          [...oldTeamPlayers.values()],
+          opponentPairsFromMatches(matches, oldTeamPlayers),
+          -1,
+        );
+      }
+      // Troca: B vai para tA; parceiro de A vai para tB.
+      await tx.teamPlayer.update({
+        where: { teamId_playerId: { teamId: tB.id, playerId: playerBId } },
+        data: { teamId: tA.id },
+      });
+      await tx.teamPlayer.update({
+        where: { teamId_playerId: { teamId: tA.id, playerId: partnerOfA } },
+        data: { teamId: tB.id },
+      });
+      if (draw.round.kind !== 'FINAL_PHASE') {
+        // Aplica o histórico das novas composições.
+        await this.history.applyDrawDeltas(
+          tx,
+          clubId,
+          roundId,
+          [...newTeamPlayers.values()],
+          opponentPairsFromMatches(matches, newTeamPlayers),
+          1,
+        );
+      }
+    });
+
+    return this.getConfirmed(clubId, roundId);
+  }
+
   // ---- helpers -----------------------------------------------------------
 
   private async loadRound(clubId: string, roundId: string): Promise<RoundWithData> {

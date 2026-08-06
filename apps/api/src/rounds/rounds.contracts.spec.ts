@@ -3,6 +3,7 @@ import {
   CreateRegistrationSchema,
   CreateRoundSchema,
   DEFAULT_MATCH_FORMAT,
+  PairDrawPlayersSchema,
   MatchFormatSchema,
   RecordClassificationSchema,
   buildClassificationTeams,
@@ -184,6 +185,17 @@ describe('buildRoundReport (texto para WhatsApp)', () => {
       rankingLimit: 10,
     });
     expect(text).toContain('… e mais 2.');
+  });
+});
+
+describe('PairDrawPlayersSchema (editar dupla)', () => {
+  const A = '00000000-0000-0000-0000-000000000001';
+  const B = '00000000-0000-0000-0000-000000000002';
+  it('aceita dois jogadores diferentes', () => {
+    expect(PairDrawPlayersSchema.safeParse({ playerAId: A, playerBId: B }).success).toBe(true);
+  });
+  it('rejeita o mesmo jogador nos dois', () => {
+    expect(PairDrawPlayersSchema.safeParse({ playerAId: A, playerBId: A }).success).toBe(false);
   });
 });
 

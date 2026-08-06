@@ -6,6 +6,7 @@ import { RoundConsole } from '@/components/RoundConsole';
 import {
   getEligiblePlayers,
   getOperableRound,
+  getRoundDraw,
   getRoundKnockout,
   getRoundMatches,
   getRoundResult,
@@ -18,12 +19,13 @@ export default async function OperarRodadaPage({ params }: { params: { id: strin
   const round = await getOperableRound(params.id);
   if (!round) notFound();
 
-  const [eligible, matches, standings, knockout, result] = await Promise.all([
+  const [eligible, matches, standings, knockout, result, draw] = await Promise.all([
     getEligiblePlayers(round.id),
     getRoundMatches(round.id),
     getRoundStandings(round.id),
     getRoundKnockout(round.id),
     getRoundResult(round.id),
+    getRoundDraw(round.id),
   ]);
 
   return (
@@ -42,6 +44,7 @@ export default async function OperarRodadaPage({ params }: { params: { id: strin
         standings={standings}
         knockout={knockout}
         result={result}
+        draw={draw}
       />
     </Shell>
   );

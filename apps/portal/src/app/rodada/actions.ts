@@ -59,6 +59,21 @@ export async function simulateDrawAction(
   return { result: res.data };
 }
 
+/** Edita o sorteio: força dois jogadores a serem dupla. */
+export async function pairDrawAction(
+  roundId: string,
+  playerAId: string,
+  playerBId: string,
+): Promise<ActionState> {
+  const res = await apiFetch(`/me/rounds/${roundId}/draw/pair`, {
+    method: 'PATCH',
+    body: JSON.stringify({ playerAId, playerBId }),
+  });
+  if (!res.ok) return { error: res.message };
+  revalidatePath(`/rodada/${roundId}`);
+  return { ok: true };
+}
+
 /** Confirma o sorteio visto (grava as duplas/grupos/jogos). */
 export async function confirmDrawAction(roundId: string, seed: string): Promise<ActionState> {
   if (!seed) return { error: 'Sorteie as duplas antes de confirmar.' };

@@ -47,6 +47,20 @@ export const ConfirmDrawSchema = SimulateDrawSchema.extend({
 });
 export type ConfirmDraw = z.infer<typeof ConfirmDrawSchema>;
 
+/**
+ * Edição do sorteio: força dois jogadores a serem dupla (troca cada um com o
+ * parceiro atual do outro). Só antes de lançar placares/gerar mata-mata.
+ */
+export const PairDrawPlayersSchema = z
+  .object({
+    playerAId: z.string().uuid(),
+    playerBId: z.string().uuid(),
+  })
+  .refine((v) => v.playerAId !== v.playerBId, {
+    message: 'Selecione dois jogadores diferentes',
+  });
+export type PairDrawPlayers = z.infer<typeof PairDrawPlayersSchema>;
+
 // ---------------------------------------------------------------------------
 // Entrada do motor
 // ---------------------------------------------------------------------------

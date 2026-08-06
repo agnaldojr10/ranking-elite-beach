@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import {
   BulkCreateRegistrationSchema,
   ConfirmDrawSchema,
+  PairDrawPlayersSchema,
   QuickAddPlayerSchema,
   RegisterMatchResultSchema,
   SimulateDrawSchema,
@@ -10,6 +11,7 @@ import {
   type ConfirmDraw,
   type ConfirmedDraw,
   type DrawResult,
+  type PairDrawPlayers,
   type GroupStandings,
   type JwtPayload,
   type KnockoutView,
@@ -112,6 +114,15 @@ export class PortalRoundsController {
   @Get('rounds/:id/draw')
   getDraw(@CurrentUser() user: JwtPayload, @Param('id') id: string): Promise<ConfirmedDraw> {
     return this.draw.getConfirmed(user.clubId, id);
+  }
+
+  @Patch('rounds/:id/draw/pair')
+  pairDraw(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body(new ZodValidationPipe(PairDrawPlayersSchema)) dto: PairDrawPlayers,
+  ): Promise<ConfirmedDraw> {
+    return this.draw.pairTogether(user.clubId, id, dto.playerAId, dto.playerBId);
   }
 
   @Get('rounds/:id/matches')
