@@ -44,7 +44,7 @@ export class DrawService {
     const round = await this.loadRound(clubId, roundId);
     this.assertReadiness(round.registrations.length);
 
-    const { config, players } = this.buildEngineInput(round, dto);
+    const { config, players } = await this.buildEngineInput(round, dto);
     const seed = dto.seed ?? randomBytes(4).toString('hex');
     const { partner, opponent } = await this.historyFor(round.kind, clubId);
 
@@ -70,7 +70,7 @@ export class DrawService {
       });
     }
 
-    const { config, players } = this.buildEngineInput(round, dto);
+    const { config, players } = await this.buildEngineInput(round, dto);
     const { partner, opponent } = await this.historyFor(round.kind, clubId);
     const result = this.execute(players, partner, opponent, config, dto.seed);
     const isFinal = round.kind === 'FINAL_PHASE';
@@ -404,10 +404,10 @@ export class DrawService {
     });
   }
 
-  private buildEngineInput(
+  private async buildEngineInput(
     round: RoundWithData,
     dto: SimulateDraw,
-  ): { config: DrawConfig; players: DrawPlayerInput[] } {
+  ): Promise<{ config: DrawConfig; players: DrawPlayerInput[] }> {
     const cfg = round.championship.config;
     const baseWeights = cfg ? DrawWeightsSchema.parse(cfg.drawWeights) : DEFAULT_DRAW_WEIGHTS;
     const isFinal = round.kind === 'FINAL_PHASE';
@@ -420,13 +420,45 @@ export class DrawService {
       allowRepeatOpponents: dto.allowRepeatOpponents ?? cfg?.allowRepeatOpponents ?? true,
       groupSizePreference: dto.groupSizePreference ?? round.groupSizePref,
     };
+
+    // "Força" = pontuação acumulada no ranking (equilibra top × base). Exclui a
+    // rodada atual, a fase final e os convidados (que não pontuam). Sem pontos
+    // ainda (início de temporada), cai no nível técnico como critério.
+    const points = await this.rankingPoints(round.championship.id, round.id);
+    const maxPoints = Math.max(0, ...points.values());
+
     const players: DrawPlayerInput[] = round.registrations.map((r) => ({
       id: r.player.id,
       name: r.player.name,
-      strength: SKILL_STRENGTH[r.player.skillLevel],
+      strength:
+        maxPoints > 0
+          ? Math.round(((points.get(r.player.id) ?? 0) / maxPoints) * 100)
+          : SKILL_STRENGTH[r.player.skillLevel],
       skillLevel: r.player.skillLevel,
     }));
     return { config, players };
+  }
+
+  /** Pontos acumulados por jogador (rodadas REGULARES, exceto a atual; sem convidados). */
+  private async rankingPoints(
+    championshipId: string,
+    currentRoundId: string,
+  ): Promise<Map<string, number>> {
+    const results = await this.prisma.roundResult.findMany({
+      where: { round: { championshipId, kind: 'REGULAR' }, roundId: { not: currentRoundId } },
+      select: {
+        pointsAwarded: true,
+        team: { select: { players: { select: { player: { select: { id: true, type: true } } } } } },
+      },
+    });
+    const points = new Map<string, number>();
+    for (const r of results) {
+      for (const tp of r.team.players) {
+        if (tp.player.type === 'GUEST') continue;
+        points.set(tp.player.id, (points.get(tp.player.id) ?? 0) + r.pointsAwarded);
+      }
+    }
+    return points;
   }
 
   private execute(
